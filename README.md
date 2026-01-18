@@ -1,48 +1,50 @@
-The Original C Robots Programming Game
-======================================
+CROW: CRObots for World models
+===============================
 [![License Badge][]][License] [![GitHub Status][]][GitHub]
 
-CROBOTS ("see-robots") is a game based on computer programming, now enhanced with **machine learning training data generation**.
+**CROW** is CROBOTS enhanced for **machine learning and world model training**. Generate deterministic, physics-accurate game state datasets from robot battle simulations.
 
 [![C Robots Demo][]][Demo]
 
+CROW combines the classic CROBOTS programming game with powerful snapshot export for training Transformer-based world models. Perfect for studying emergent behavior, deterministic physics simulation, and RL/planning algorithm development.
 
-ML Training & World Models
----------------------------
+### Quick Start
 
-This fork of CROBOTS adds powerful **game state snapshot export** for training Transformer-based world models. Generate deterministic, physics-accurate training data from robot battles:
+Generate training data in seconds:
 
 ```bash
-# Generate 100 matches of training data (complete with physics states)
+# Headless: 100 matches of training data (~3 seconds)
 ./src/crobots -o training_data.txt -m 100 examples/counter.r examples/jedi12.r
 ```
 
-Each snapshot contains:
+### What You Get
+
+Each snapshot contains complete game state:
 - **ASCII battlefield visualization** (50×20 grid) showing game state
 - **Structured robot data**: position, heading, speed, damage, status
 - **Missile dynamics**: position, heading, range, distance, lifetime
 - **Sampling rate**: Every 30 CPU cycles (~16,666 snapshots per 500k-cycle match)
+- **Format**: Human-readable, easily tokenizable for Transformer training
 
-Perfect for:
+### Use Cases
+
 - Training world models on deterministic game physics
-- Studying emergent combat behavior
+- Studying emergent multi-agent combat behavior
 - Generating synthetic training data for RL/planning algorithms
-- Analyzing game state transitions and robot decision-making
+- Analyzing game state transitions and decision-making
+- Benchmarking world model accuracy on known physics
 
 **Performance**: Headless snapshot generation runs **~33x faster** than real-time display (100 matches in ~3 seconds).
 
 
-Classic CROBOTS Game
---------------------
+About CROBOTS
+-------------
 
-Unlike arcade type games which require human inputs controlling some
-object, all strategy in CROBOTS must be complete before the actual game
-begins.  Game strategy is condensed into a C language program that you
-design and write.  Your program controls a robot whose mission is to
-seek out, track, and destroy other robots, each running different
-programs.  Each robot is equally equipped, and up to four robots may
-compete at once.  CROBOTS is best played among several people, each
-refining their own robot program, then matching program against program.
+CROW is based on **CROBOTS** ("see-robots"), the original C robot programming game from 1985.
+
+Unlike arcade games that require real-time human input, CROBOTS emphasizes **strategy through programming**. You write a C program that controls a robot's behavior—vision, movement, targeting, timing. Your program runs autonomously to seek out, track, and destroy other robots. Each robot is equally equipped, and up to four robots can compete simultaneously.
+
+CROBOTS is best played among programmers, each refining their own robot program and testing against others.
 
 CROBOTS consists of a C compiler, a virtual computer, and battlefield
 display (text graphics only, monochrome or color).  The CROBOTS compiler
@@ -136,20 +138,28 @@ MISSILES:
 Each snapshot contains complete game state in human-readable, easily tokenizable format.
 
 
+Why CROW?
+---------
+
+**CROW** (CRObots for World models) extends CROBOTS with modern machine learning capabilities:
+
+- **Deterministic physics**: Identical inputs produce identical outcomes—perfect for training predictive models
+- **Complete state capture**: Every game state is recorded at regular intervals with full robot and missile dynamics
+- **High-throughput generation**: Generate millions of training samples in minutes
+- **Emergent behavior**: Study how simple robot control programs create complex multi-agent dynamics
+- **Benchmark data**: Use CROW as a controlled test environment for world model architectures
+
+CROW preserves the original CROBOTS game mechanics while adding the snapshot export feature for modern ML applications. The physics engine remains deterministic and true to the original 1985 implementation.
+
+
 Origin & References
 -------------------
 
-This is the original CROBOTS game, by [Tom Poindexter][] from 1985.  It
-was first ported to Linux by Pablo Algar in 2018.  Please don't bother
-Tom with email or patches, he will probably **not** be updating CROBOTS
-any more.
+CROW builds on **CROBOTS**, the original C robot programming game by [Tom Poindexter][] from 1985. The base CROBOTS project was first ported to Linux by Pablo Algar in 2018.
 
-Instead, send patches or GitHub pull requests to this project.  It is
-the logical continuation of Tom's project and has the explicit goal of
-gathering (sane) patches from all forks out there.  Some of them work
-just as well, but this one has the explicit goal of retaining the true
-spirit of the original, with the same limits (e.g., MAX 1000 CPU
-instructions) and behavior.
+**CROW** adds machine learning capabilities (game state snapshots for world model training) while preserving the original game mechanics and physics. The implementation maintains backward compatibility—all original CROBOTS programs run identically, just with optional snapshot output.
+
+CROW is maintained as part of the broader CROBOTS ecosystem. For the base CROBOTS project with community patches, see [troglobit/crobots](https://github.com/troglobit/crobots).
 
 [C Robots Demo]:    https://asciinema.org/a/369639.svg
 [Demo]:             https://asciinema.org/a/369639
