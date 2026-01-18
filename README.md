@@ -53,6 +53,76 @@ command line.
 ![C robots action screenshot](doc/crobots.png)
 
 
+Game State Snapshots for ML Training
+-------------------------------------
+
+CROBOTS supports exporting game state snapshots for machine learning and data analysis. Each snapshot contains an ASCII battlefield visualization and structured data (robot positions, headings, speeds, damage, missile states, etc.).
+
+### Basic Usage
+
+**Headless snapshot generation (fastest):**
+```bash
+./src/crobots -o training.txt -m 100 examples/counter.r examples/jedi12.r
+```
+
+**Watch battle and record snapshots:**
+```bash
+./src/crobots -o battle.txt examples/counter.r examples/jedi12.r
+```
+
+### Options
+
+- `-o FILE` - Output snapshots to file. Creates ASCII battlefield + data tables every 30 CPU cycles
+- `-m NUM` - Run multiple matches. Combine with `-o` for headless batch generation
+- `-l NUM` - Limit cycles per match (default: 500,000)
+
+### Output Format
+
+Each snapshot includes:
+- ASCII battlefield (50×20 characters) showing robot positions (1-4) and missile locations (*)
+- Robot data table: position, heading, speed, damage percentage, status
+- Missile data table: position, heading, range, distance
+
+Example:
+```
+=== CYCLE 30 ===
+BATTLEFIELD (1000x1000m):
++--------------------------------------------------+
+|                                        1         |
+|                            2                     |
+|                                                  |
++--------------------------------------------------+
+
+ROBOTS:
+[1] counter.r  | Pos: ( 500, 750) | Head: 045 | Speed: 050 | Damage: 000% | ACTIVE
+[2] jedi12.r   | Pos: ( 800, 250) | Head: 270 | Speed: 075 | Damage: 015% | ACTIVE
+
+MISSILES:
+[1.0] FLYING | Pos: ( 600, 700) | Head: 315 | Range: 0450 | Dist: 0200
+```
+
+### For ML Training
+
+Generate large training datasets:
+```bash
+# Generate 100 matches (~330k lines each)
+./src/crobots -o training_data.txt -m 100 examples/counter.r examples/jedi12.r
+```
+
+The output is human-readable and easily tokenizable for Transformer training on world models. Data includes:
+- Complete game state at regular intervals (every 30 CPU cycles)
+- Robot kinematics: position, heading, speed
+- Combat state: damage, reload status
+- Missile dynamics: positions, trajectories, lifetime
+- Coordinate system: 1000×1000 meter battlefield
+
+### Performance
+
+- Headless mode with `-o`: ~33x faster than real-time display
+- Example: 100 matches in ~3 seconds
+- Optimized file buffering for maximum throughput
+
+
 Origin & References
 -------------------
 
