@@ -1,6 +1,5 @@
 CROW: CRObots for World models
 ===============================
-[![License Badge][]][License] [![GitHub Status][]][GitHub]
 
 **CROW** is CROBOTS enhanced for **world model training**. Generate deterministic, physics-accurate game state datasets from robot battle simulations.
 
@@ -213,8 +212,3 @@ MISSILES:
 - Legacy 50×20 size no longer supported
 
 Existing robot programs should work unchanged; these are only spatial configuration changes.
-
-[License]:          https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
-[License Badge]:    https://img.shields.io/badge/License-GPL%20v2-blue.svg
-[GitHub]:           https://github.com/troglobit/crobots/actions/workflows/build.yml/
-[GitHub Status]:    https://github.com/troglobit/crobots/actions/workflows/build.yml/badge.svg
