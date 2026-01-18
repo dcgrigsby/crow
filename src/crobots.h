@@ -155,6 +155,7 @@ typedef struct {
     int max_y;             /* battlefield_size (replaces MAX_Y) */
     int mis_range;         /* 70% of battlefield_size */
     int max_instr;         /* Maximum robot instruction limit (default 1000) */
+    int snapshot_interval;  /* Cycles between snapshots (default 30) */
 } config_t;
 
 extern config_t g_config;

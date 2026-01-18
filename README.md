@@ -24,7 +24,7 @@ Each snapshot contains complete game state:
 - **ASCII battlefield visualization** (configurable grid, default 128×128) showing game state
 - **Structured robot data**: position, heading, speed, damage, status
 - **Missile dynamics**: position, heading, range, distance, lifetime
-- **Sampling rate**: Every 30 CPU cycles (~16,666 snapshots per 500k-cycle match)
+- **Sampling rate**: Configurable via `-u` option (default 30 CPU cycles, ~16,666 snapshots per 500k-cycle match)
 - **Format**: Human-readable, easily tokenizable for Transformer training
 - **Configurable dimensions**: Battlefield size (64-16384m) and snapshot grid (16-1024) for ML training consistency
 
@@ -71,7 +71,8 @@ Snapshot Usage Guide
 - `-k SIZE` - Max instruction limit per robot (range 256-8000, default 1000). Use for complex robots
 
 **Game Control:**
-- `-o FILE` - Output snapshots to file (ASCII battlefield + structured data every 30 cycles)
+- `-o FILE` - Output snapshots to file (ASCII battlefield + structured data)
+- `-u CYCLES` - Snapshot interval in CPU cycles (range 1-1000, default 30). Lower values = more snapshots
 - `-m NUM` - Run multiple matches. Combine with `-o` for headless batch generation
 - `-l NUM` - Limit cycles per match (default: 500,000)
 
@@ -112,10 +113,20 @@ Snapshot Usage Guide
 ./src/crobots -k 2000 -o complex.txt -m 50 examples/jedi12.r examples/counter.r
 ```
 
+**Higher sampling rate for dense data (snapshot every 10 cycles instead of 30):**
+```bash
+./src/crobots -u 10 -o dense.txt -m 100 examples/counter.r examples/jedi12.r
+```
+
+**Lower sampling rate for faster processing (snapshot every 60 cycles):**
+```bash
+./src/crobots -u 60 -o sparse.txt -m 100 examples/counter.r examples/jedi12.r
+```
+
 Snapshot File Format
 --------------------
 
-Output files are text-based and human-readable. Each file contains one or more matches, with snapshots recorded every 30 CPU cycles.
+Output files are text-based and human-readable. Each file contains one or more matches, with snapshots recorded at intervals configurable via `-u` (default every 30 CPU cycles).
 
 ### File Structure
 

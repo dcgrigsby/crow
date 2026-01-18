@@ -59,7 +59,8 @@ config_t g_config = {
     .snapshot_grid_size = 128,
     .max_x = 1024,
     .max_y = 1024,
-    .mis_range = 716
+    .mis_range = 716,
+    .snapshot_interval = 30
 };
 
 /* SIGINT handler */
@@ -119,6 +120,8 @@ static int usage(int rc)
 	 "  -o FILE   Output game state snapshots to FILE. Writes ASCII battlefield\n"
 	 "            and structured data each update cycle. Works with -m for batch\n"
 	 "            recording. Headless mode when combined with -m.\n"
+	 "  -u CYCLES Snapshot interval in CPU cycles (range 1-1000, default 30).\n"
+	 "            Lower values produce more snapshots, higher values produce fewer\n"
 	 "  -s        Show robot stats on exit\n"
 	 "  -v        Show program version and exit\n"
 	 "\n"
@@ -151,7 +154,7 @@ int main(int argc,char *argv[])
 
   setlinebuf(stdout);
 
-  while ((c = getopt(argc, argv, "b:cdg:hik:l:m:o:sv")) != EOF) {
+  while ((c = getopt(argc, argv, "b:cdg:hik:l:m:o:su:v")) != EOF) {
       switch (c) {
         case 'b':		/* battlefield size */
         {
@@ -224,6 +227,16 @@ int main(int argc,char *argv[])
 
         case 's':
 	  r_stats= 1;
+	  break;
+
+	case 'u':		/* snapshot interval in cycles */
+	{
+	  int interval = atoi(optarg);
+	  if (interval < 1 || interval > 1000) {
+	    errx(1, "Snapshot interval must be in range 1-1000 cycles, got %d", interval);
+	  }
+	  g_config.snapshot_interval = interval;
+	}
 	  break;
 
         case 'v':
@@ -409,7 +422,7 @@ void play(char *f[], int n)
     update_disp();
   }
   movement = MOTION_CYCLES;
-  display = UPDATE_CYCLES;
+  display = g_config.snapshot_interval;
   robotsleft = num_robots;
 
   /* multi-tasker; give each robot one cycle per loop */
@@ -422,9 +435,9 @@ void play(char *f[], int n)
 	/* TODO simulate fixed virtual Mhz */
 	usleep(CYCLE_DELAY);
 	cycle();
-      } 
+      }
     }
-    
+
     /* is it time to update motion? */
     if (--movement <= 0) {
       movement = MOTION_CYCLES;
@@ -434,8 +447,8 @@ void play(char *f[], int n)
 
     /* is it time to update display */
     if (--display <= 0) {
-      display = UPDATE_CYCLES;
-      c += UPDATE_CYCLES;
+      display = g_config.snapshot_interval;
+      c += g_config.snapshot_interval;
 
       if (!r_snapshot) {
         show_cycle(c);
@@ -541,7 +554,7 @@ void match(int m, long l, char *f[], int n)
 
     rand_pos(num_robots);
     movement = MOTION_CYCLES;
-    display = UPDATE_CYCLES;  /* Snapshot display counter */
+    display = g_config.snapshot_interval;  /* Snapshot display counter */
     robotsleft = num_robots;
     c = 0L;
     while (robotsleft > 1 && c < l) {
@@ -568,11 +581,11 @@ void match(int m, long l, char *f[], int n)
 	  }
 	}
 
-	/* Output snapshot every UPDATE_CYCLES */
+	/* Output snapshot every g_config.snapshot_interval */
 	if (r_snapshot) {
 	  display -= MOTION_CYCLES;
 	  if (display <= 0) {
-	    display = UPDATE_CYCLES;
+	    display = g_config.snapshot_interval;
 	    output_snapshot(c);
 	  }
 	}
