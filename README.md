@@ -29,10 +29,49 @@ Each snapshot contains complete game state:
 - **Configurable dimensions**: Battlefield size (64-16384m) and snapshot grid (16-1024) for ML training consistency
 
 
+Robot Programming Guide
+-----------------------
+
+### Built-in Functions
+
+Robots have access to the following built-in functions:
+
+**Query Functions:**
+- `battlefield_size()` - Returns the configured battlefield size in meters (e.g., 1024 for a 1024×1024m arena)
+- `cannon_range()` - Returns the maximum cannon range in meters (~70% of battlefield size)
+- `loc_x()` - Returns current X position in meters
+- `loc_y()` - Returns current Y position in meters
+- `damage()` - Returns current damage percentage (0-100)
+- `speed()` - Returns current speed value (0-100)
+
+**Action Functions:**
+- `drive(degree, speed)` - Set heading and speed
+- `cannon(degree, distance)` - Fire cannon at heading and distance
+- `scan(degree, resolution)` - Scan in a direction; returns distance to nearest robot or 0
+
+**Utility Functions:**
+- `rand(limit)` - Return random integer from 0 to limit
+- `sin(degree)`, `cos(degree)`, `tan(degree)`, `atan(ratio)`, `sqrt(x)` - Math functions
+
+### Dynamic Battlefield Adaptation
+
+Starting with CROW v2.1, robot programs can query battlefield dimensions at runtime, eliminating the need for hardcoded values:
+
+```c
+int range_limit = cannon_range();  // Get actual range for current battlefield
+int arena_size = battlefield_size(); // Get actual battlefield size
+int center = arena_size / 2;       // Calculate center point dynamically
+```
+
+This allows the same robot program to work correctly with any battlefield size (e.g., `-b 512`, `-b 1024`, `-b 2048`).
+
+**Example:** The provided `counter.r` and `sniper.r` robots use these functions to adapt to any configured battlefield size. To create robots for ML training with varying arena sizes, your robots can now automatically adjust their strategy.
+
+
 Origin
 ------
 
-**CROW** extends [CROBOTS](https://github.com/troglobit/crobots), the classic C robot programming game created by Tom Poindexter in 1985. CROBOTS is free software under the GNU General Public License v2. 
+**CROW** extends [CROBOTS](https://github.com/troglobit/crobots), the classic C robot programming game created by Tom Poindexter in 1985. CROBOTS is free software under the GNU General Public License v2.
 
 
 Snapshot Usage Guide
