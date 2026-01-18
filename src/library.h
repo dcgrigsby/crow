@@ -34,8 +34,8 @@ void c_cos   (void);  /* cos(degree); = cos * 100000 */
 void c_tan   (void);  /* tan(degree); = tan * 100000 */
 void c_atan  (void);  /* atan(ratio); = degree */
 void c_sqrt  (void);  /* sqrt(x); = square root */
-void c_battlefield_size(void);  /* battlefield_size(); = battlefield size in meters */
-void c_cannon_range(void);  /* cannon_range(); = cannon range in meters */
+void c_batsiz(void);  /* batsiz(); = battlefield size in meters */
+void c_canrng(void);  /* canrng(); = cannon range in meters */
 
 #endif /* CROBOTS_LIBRARY_H_ */
 

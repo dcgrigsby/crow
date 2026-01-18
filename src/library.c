@@ -350,17 +350,17 @@ void c_sqrt(void)
 }
 
 
-/* c_battlefield_size - return the battlefield size in meters */
+/* c_batsiz - return the battlefield size in meters */
 
-void c_battlefield_size(void)
+void c_batsiz(void)
 {
   push((long) g_config.battlefield_size);
 }
 
 
-/* c_cannon_range - return the cannon range in meters */
+/* c_canrng - return the cannon range in meters */
 
-void c_cannon_range(void)
+void c_canrng(void)
 {
   push((long) g_config.mis_range);
 }

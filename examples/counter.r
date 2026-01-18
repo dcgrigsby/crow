@@ -12,7 +12,7 @@ main()
   long i;
 
   res = 1;
-  threshold = cannon_range();
+  threshold = canrng();
   d = damage();
   angle = rand(360);
   while(1) {
@@ -61,7 +61,7 @@ run()
 
   x = loc_x();
   y = loc_y();
-  center = battlefield_size() / 2;
+  center = batsiz() / 2;
 
   if (last_dir == 0) {
     if (y > center) {  /* above center */

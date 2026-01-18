@@ -26,12 +26,12 @@ main()
   int max_coord;      /* max battlefield coordinate */
 
   /* initialize the corner info based on battlefield size */
-  max_coord = battlefield_size() - 10;
+  max_coord = batsiz() - 10;
   c1x = 10;  c1y = 10;  s1 = 0;
   c2x = 10;  c2y = max_coord; s2 = 270;
   c3x = max_coord; c3y = max_coord; s3 = 180;
   c4x = max_coord; c4y = 10;  s4 = 90;
-  cannon_limit = cannon_range();
+  cannon_limit = canrng();
   closest = 9999;
   new_corner();       /* start at a random corner */
   d = damage();       /* get current damage */

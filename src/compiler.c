@@ -81,8 +81,8 @@ struct intrin intrinsics[20] = {
   {"tan",	c_tan},
   {"atan",	c_atan},
   {"sqrt",	c_sqrt},
-  {"battlefield_size",	c_battlefield_size},
-  {"cannon_range",	c_cannon_range},
+  {"batsiz",	c_batsiz},
+  {"canrng",	c_canrng},
   {"",		NULL}
 };
 
