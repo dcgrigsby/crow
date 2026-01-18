@@ -37,31 +37,12 @@ Each snapshot contains complete game state:
 **Performance**: Headless snapshot generation runs **~33x faster** than real-time display (100 matches in ~3 seconds).
 
 
-About CROBOTS
--------------
+Origin
+------
 
-CROW is based on **CROBOTS** ("see-robots"), the original C robot programming game from 1985.
+**CROW** extends [CROBOTS](https://github.com/troglobit/crobots), the classic C robot programming game created by Tom Poindexter in 1985. CROBOTS is free software under the GNU General Public License v2. It has been tested on Linux, FreeBSD, DragonflyBSD, macOS, and OmniOS.
 
-Unlike arcade games that require real-time human input, CROBOTS emphasizes **strategy through programming**. You write a C program that controls a robot's behavior—vision, movement, targeting, timing. Your program runs autonomously to seek out, track, and destroy other robots. Each robot is equally equipped, and up to four robots can compete simultaneously.
-
-CROBOTS is best played among programmers, each refining their own robot program and testing against others.
-
-CROBOTS consists of a C compiler, a virtual computer, and battlefield
-display (text graphics only, monochrome or color).  The CROBOTS compiler
-accepts a limited (but useful) subset of the C language.  The C robot
-programs are aided by hardware functions to scan for opponents, start
-and stop drive mechanisms, fire cannons, etc.  After the programs are
-compiled and loaded into separate robots, the battle is observed.
-Robots moving, missiles flying and exploding, and certain status
-information are displayed on the screen, in real-time.
-
-CROBOTS started out as DOS shareware, but is, as of Oct 23 2013, free
-software under terms of the GNU General Public License, version 2.
-
-CROBOTS has been tested and runs on Linux (GLIBC & musl libc), FreeBSD,
-DragonflyBSD, macOS, and OmniOS (Illumos/OpenSolaris).  For some reason
-it does not work well on NetBSD, despite many hours of debugging by the
-maintainer.  Patches are most welcome!
+CROW adds machine learning capabilities (game state snapshots) while preserving the original game mechanics and physics engine.
 
 
 Intended audience
@@ -151,15 +132,6 @@ Why CROW?
 
 CROW preserves the original CROBOTS game mechanics while adding the snapshot export feature for modern ML applications. The physics engine remains deterministic and true to the original 1985 implementation.
 
-
-Origin & References
--------------------
-
-CROW builds on **CROBOTS**, the original C robot programming game by [Tom Poindexter][] from 1985. The base CROBOTS project was first ported to Linux by Pablo Algar in 2018.
-
-**CROW** adds machine learning capabilities (game state snapshots for world model training) while preserving the original game mechanics and physics. The implementation maintains backward compatibility—all original CROBOTS programs run identically, just with optional snapshot output.
-
-CROW is maintained as part of the broader CROBOTS ecosystem. For the base CROBOTS project with community patches, see [troglobit/crobots](https://github.com/troglobit/crobots).
 
 [C Robots Demo]:    https://asciinema.org/a/369639.svg
 [Demo]:             https://asciinema.org/a/369639
