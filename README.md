@@ -83,6 +83,9 @@ Snapshot Usage Guide
 - `-b SIZE` - Battlefield size (SIZE×SIZE meters, must be power of 2, range 64-16384, default 1024)
 - `-g SIZE` - Snapshot grid size (SIZE×SIZE, must be power of 2, range 16-1024, default 128)
 
+**Robot Compilation:**
+- `-k SIZE` - Max instruction limit per robot (range 256-8000, default 1000). Use for complex robots
+
 **Game Control:**
 - `-o FILE` - Output snapshots to file (ASCII battlefield + structured data every 30 cycles)
 - `-m NUM` - Run multiple matches. Combine with `-o` for headless batch generation
@@ -118,6 +121,11 @@ Snapshot Usage Guide
 **Control cycle limit:**
 ```bash
 ./src/crobots -o data.txt -m 10 -l 100000 examples/counter.r examples/jedi12.r
+```
+
+**Complex robots with increased instruction limit:**
+```bash
+./src/crobots -k 2000 -o complex.txt -m 50 examples/jedi12.r examples/counter.r
 ```
 
 Snapshot File Format
