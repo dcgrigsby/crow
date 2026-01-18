@@ -37,8 +37,8 @@ Robot Programming Guide
 Robots have access to the following built-in functions:
 
 **Query Functions:**
-- `battlefield_size()` - Returns the configured battlefield size in meters (e.g., 1024 for a 1024×1024m arena)
-- `cannon_range()` - Returns the maximum cannon range in meters (~70% of battlefield size)
+- `batsiz()` - Returns the configured battlefield size in meters (e.g., 1024 for a 1024×1024m arena)
+- `canrng()` - Returns the maximum cannon range in meters (~70% of battlefield size)
 - `loc_x()` - Returns current X position in meters
 - `loc_y()` - Returns current Y position in meters
 - `damage()` - Returns current damage percentage (0-100)
@@ -58,9 +58,9 @@ Robots have access to the following built-in functions:
 Starting with CROW v2.1, robot programs can query battlefield dimensions at runtime, eliminating the need for hardcoded values:
 
 ```c
-int range_limit = cannon_range();  // Get actual range for current battlefield
-int arena_size = battlefield_size(); // Get actual battlefield size
-int center = arena_size / 2;       // Calculate center point dynamically
+int range_limit = canrng();  // Get actual range for current battlefield
+int arena_size = batsiz();   // Get actual battlefield size
+int center = arena_size / 2; // Calculate center point dynamically
 ```
 
 This allows the same robot program to work correctly with any battlefield size (e.g., `-b 512`, `-b 1024`, `-b 2048`).
