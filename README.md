@@ -4,8 +4,6 @@ CROW: CRObots for World models
 
 **CROW** is CROBOTS enhanced for **machine learning and world model training**. Generate deterministic, physics-accurate game state datasets from robot battle simulations.
 
-[![C Robots Demo][]][Demo]
-
 CROW combines the classic CROBOTS programming game with powerful snapshot export for training Transformer-based world models. Perfect for studying emergent behavior, deterministic physics simulation, and RL/planning algorithm development.
 
 ### Quick Start
@@ -133,9 +131,6 @@ Why CROW?
 CROW preserves the original CROBOTS game mechanics while adding the snapshot export feature for modern ML applications. The physics engine remains deterministic and true to the original 1985 implementation.
 
 
-[C Robots Demo]:    https://asciinema.org/a/369639.svg
-[Demo]:             https://asciinema.org/a/369639
-[Tom Poindexter]:   https://github.com/tpoindex/
 [License]:          https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 [License Badge]:    https://img.shields.io/badge/License-GPL%20v2-blue.svg
 [GitHub]:           https://github.com/troglobit/crobots/actions/workflows/build.yml/
