@@ -32,30 +32,14 @@ Each snapshot contains complete game state:
 Robot Programming Guide
 -----------------------
 
-### Built-in Functions
+### New Built-in Functions (CROW v2.1+)
 
-Robots have access to the following built-in functions:
+CROW adds two new built-in functions for runtime access to battlefield configuration:
 
-**Query Functions:**
 - `batsiz()` - Returns the configured battlefield size in meters (e.g., 1024 for a 1024×1024m arena)
 - `canrng()` - Returns the maximum cannon range in meters (~70% of battlefield size)
-- `loc_x()` - Returns current X position in meters
-- `loc_y()` - Returns current Y position in meters
-- `damage()` - Returns current damage percentage (0-100)
-- `speed()` - Returns current speed value (0-100)
 
-**Action Functions:**
-- `drive(degree, speed)` - Set heading and speed
-- `cannon(degree, distance)` - Fire cannon at heading and distance
-- `scan(degree, resolution)` - Scan in a direction; returns distance to nearest robot or 0
-
-**Utility Functions:**
-- `rand(limit)` - Return random integer from 0 to limit
-- `sin(degree)`, `cos(degree)`, `tan(degree)`, `atan(ratio)`, `sqrt(x)` - Math functions
-
-### Dynamic Battlefield Adaptation
-
-Starting with CROW v2.1, robot programs can query battlefield dimensions at runtime, eliminating the need for hardcoded values:
+These allow robot programs to dynamically adapt to configurable battlefield sizes without hardcoding assumptions:
 
 ```c
 int range_limit = canrng();  // Get actual range for current battlefield
@@ -63,9 +47,9 @@ int arena_size = batsiz();   // Get actual battlefield size
 int center = arena_size / 2; // Calculate center point dynamically
 ```
 
-This allows the same robot program to work correctly with any battlefield size (e.g., `-b 512`, `-b 1024`, `-b 2048`).
+**Example:** The provided `counter.r`, `sniper.r`, `rook.r`, `jedi12.r`, and `ksnipper.r` robots use these functions to adapt to any configured battlefield size. To create robots for ML training with varying arena sizes, your robots can now automatically adjust their strategy.
 
-**Example:** The provided `counter.r` and `sniper.r` robots use these functions to adapt to any configured battlefield size. To create robots for ML training with varying arena sizes, your robots can now automatically adjust their strategy.
+For standard CROBOTS built-in functions (drive, cannon, scan, damage, speed, loc_x, loc_y, rand, math functions), see the original [CROBOTS documentation](https://github.com/troglobit/crobots).
 
 
 Origin
