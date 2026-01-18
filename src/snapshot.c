@@ -66,6 +66,8 @@ static void draw_battlefield(long cycle)
     gy = convert_to_grid(robots[r].y, MAX_Y * CLICK, GRID_HEIGHT);
 
     if (gx >= 0 && gy >= 0) {
+      /* Invert Y-axis: game Y increases upward, but grid rows increase downward */
+      gy = GRID_HEIGHT - 1 - gy;
       grid[gy][gx] = '1' + r;  /* Robot numbers 1-4 */
     }
   }
@@ -80,6 +82,8 @@ static void draw_battlefield(long cycle)
       gy = convert_to_grid(missiles[r][m].cur_y, MAX_Y * CLICK, GRID_HEIGHT);
 
       if (gx >= 0 && gy >= 0) {
+        /* Invert Y-axis: game Y increases upward, but grid rows increase downward */
+        gy = GRID_HEIGHT - 1 - gy;
         /* Only overwrite spaces, don't overwrite robots */
         if (grid[gy][gx] == ' ')
           grid[gy][gx] = '*';

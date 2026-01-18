@@ -333,8 +333,10 @@ void play(char *f[], int n)
     init_snapshot(f_snapshot);
   }
 
-  init_disp();
-  update_disp();
+  if (!r_snapshot) {
+    init_disp();
+    update_disp();
+  }
   movement = MOTION_CYCLES;
   display = UPDATE_CYCLES;
   robotsleft = num_robots;
@@ -363,8 +365,11 @@ void play(char *f[], int n)
     if (--display <= 0) {
       display = UPDATE_CYCLES;
       c += UPDATE_CYCLES;
-      show_cycle(c);
-      update_disp();
+
+      if (!r_snapshot) {
+        show_cycle(c);
+        update_disp();
+      }
 
       if (r_snapshot) {
         output_snapshot(c);
@@ -387,7 +392,10 @@ void play(char *f[], int n)
 
     move_robots(1);
     move_miss(1);
-    update_disp();
+
+    if (!r_snapshot) {
+      update_disp();
+    }
 
     if (r_snapshot) {
       c += MOTION_CYCLES;
@@ -395,7 +403,9 @@ void play(char *f[], int n)
     }
   }
 
-  end_disp();
+  if (!r_snapshot) {
+    end_disp();
+  }
 
   if (r_snapshot) {
     close_snapshot();
