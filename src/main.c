@@ -53,6 +53,15 @@ FILE *f_out;			/* the compiler diagnostic file, assumed opened */
 FILE *f_snapshot = NULL;	/* snapshot output file */
 int r_snapshot = 0;		/* snapshot mode flag */
 
+/* Global configuration structure */
+config_t g_config = {
+    .battlefield_size = 1024,
+    .snapshot_grid_size = 128,
+    .max_x = 1024,
+    .max_y = 1024,
+    .mis_range = 716
+};
+
 /* SIGINT handler */
 void catch_int(int);
 
@@ -67,16 +76,34 @@ void free_robot(int i);
 void robot_stats(void);
 void rand_pos(int n);
 
+/* Check if a number is a power of 2 */
+static int is_power_of_2(int n)
+{
+    return (n > 0) && ((n & (n - 1)) == 0);
+}
+
+/* Initialize configuration derived values */
+static void init_config(void)
+{
+    g_config.max_x = g_config.battlefield_size;
+    g_config.max_y = g_config.battlefield_size;
+    g_config.mis_range = (g_config.battlefield_size * 70) / 100;
+}
+
 static int usage(int rc)
 {
   printf("Usage:\n"
 	 "  crobots [options] robot1.r [robotN.r] [>file]\n"
 	 "\n"
 	 "Options:\n"
+	 "  -b SIZE   Battlefield size (SIZE×SIZE meters, must be power of 2,\n"
+	 "            range 64-16384, default 1024)\n"
 	 "  -c        Compile only, produce virtual machine assembler code and\n"
 	 "            symbol tables\n"
 	 "  -d        Compile one program, then invoke machine level single step\n"
 	 "            tracing (debugger)\n"
+	 "  -g SIZE   Snapshot grid size (SIZE×SIZE, must be power of 2,\n"
+	 "            range 16-1024, default 128)\n"
 	 "  -h        This help text\n"
 	 "  -i        Interactive mode, show code output and 'Press <enter> ..'\n"
 	 "  -m NUM    Run a series of matches, were NUM is the number of matches.\n"
@@ -119,8 +146,21 @@ int main(int argc,char *argv[])
 
   setlinebuf(stdout);
 
-  while ((c = getopt(argc, argv, "cdhil:m:o:sv")) != EOF) {
+  while ((c = getopt(argc, argv, "b:cdg:hil:m:o:sv")) != EOF) {
       switch (c) {
+        case 'b':		/* battlefield size */
+        {
+          int size = atoi(optarg);
+          if (size < 64 || size > 16384) {
+            errx(1, "Battlefield size must be in range 64-16384, got %d", size);
+          }
+          if (!is_power_of_2(size)) {
+            errx(1, "Battlefield size must be a power of 2, got %d", size);
+          }
+          g_config.battlefield_size = size;
+        }
+          break;
+
         case 'c':		/* compile only flag */
           comp_only = 1;
           r_debug = 1;          /* turns on full compile info */
@@ -130,6 +170,19 @@ int main(int argc,char *argv[])
           debug_only = 1;
           r_debug = 1;          /* turns on full compile info */
 	  break;
+
+        case 'g':		/* snapshot grid size */
+        {
+          int size = atoi(optarg);
+          if (size < 16 || size > 1024) {
+            errx(1, "Snapshot grid size must be in range 16-1024, got %d", size);
+          }
+          if (!is_power_of_2(size)) {
+            errx(1, "Snapshot grid size must be a power of 2, got %d", size);
+          }
+          g_config.snapshot_grid_size = size;
+        }
+          break;
 
         case 'h':
 	  return usage(0);
@@ -167,6 +220,9 @@ int main(int argc,char *argv[])
       }
 
   }
+
+  /* Initialize config with derived values */
+  init_config();
 
   /* print version, copyright notice, GPL notice */
   if (r_interactive) {

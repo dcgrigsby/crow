@@ -97,7 +97,6 @@ typedef struct robot {		/* robot context */
 
 /* missile constants */
 #define MIS_SPEED 500		/* how far in one motion cycle (in clicks) (originally 500)*/
-#define MIS_RANGE 700 		/* maximum missile range (see MAX_X, MAX_Y */
 #define MIS_ROBOT 2		/* number of active missiles per robot */
 #define AVAIL  0		/* missile available for use */
 #define FLYING 1		/* missile in air */
@@ -147,8 +146,22 @@ int r_debug,			/* debug switch */
 /* size of battlefield, see MIS_RANGE also. note - x and y coordinates */
 /* of robots and missiles are measured in CLICKS * MAX_? */
 #define CLICK 10		/* 10 clicks per meter */
-#define MAX_X 1000		/* 1000 meters x axis */
-#define MAX_Y 1000		/* 1000 meters y axis */
+
+/* Global configuration structure for runtime-configurable battlefield dimensions */
+typedef struct {
+    int battlefield_size;   /* CLI value (e.g., 1024) */
+    int snapshot_grid_size; /* CLI value (e.g., 128) */
+    int max_x;             /* battlefield_size (replaces MAX_X) */
+    int max_y;             /* battlefield_size (replaces MAX_Y) */
+    int mis_range;         /* 70% of battlefield_size */
+} config_t;
+
+extern config_t g_config;
+
+/* Macro aliases for seamless transition from compile-time constants */
+#define MAX_X g_config.max_x
+#define MAX_Y g_config.max_y
+#define MIS_RANGE g_config.mis_range
 
 /* damage factors, percent */
 #define DIRECT_HIT 10

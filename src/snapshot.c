@@ -11,6 +11,7 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "crobots.h"
 #include "snapshot.h"
@@ -18,15 +19,11 @@
 /* Global file pointer for snapshot output */
 static FILE *snapshot_fp = NULL;
 
-/* Battlefield dimensions for ASCII grid */
-#define GRID_WIDTH  50
-#define GRID_HEIGHT 20
-
 /**
  * convert_to_grid - Convert game coordinate to grid position
  * @pos: Position in clicks * 100 (centimeter precision)
  * @max_pos: Maximum position (MAX_X or MAX_Y in meters * CLICK)
- * @grid_size: Grid dimension (GRID_WIDTH or GRID_HEIGHT)
+ * @grid_size: Grid dimension (configurable)
  *
  * Returns: Grid coordinate (0 to grid_size-1), or -1 if out of bounds
  */
@@ -46,15 +43,22 @@ static int convert_to_grid(int pos, int max_pos, int grid_size)
  */
 static void draw_battlefield(long cycle)
 {
-  char grid[GRID_HEIGHT][GRID_WIDTH];
+  int grid_width = g_config.snapshot_grid_size;
+  int grid_height = g_config.snapshot_grid_size;
+  char *grid;
   int i, j, r, m;
   int gx, gy;
 
+  /* Allocate dynamic grid */
+  grid = calloc(grid_height * grid_width, sizeof(char));
+  if (!grid) {
+    fprintf(stderr, "Failed to allocate grid memory\n");
+    return;
+  }
+
   /* Initialize grid with spaces */
-  for (i = 0; i < GRID_HEIGHT; i++) {
-    for (j = 0; j < GRID_WIDTH; j++) {
-      grid[i][j] = ' ';
-    }
+  for (i = 0; i < grid_height * grid_width; i++) {
+    grid[i] = ' ';
   }
 
   /* Place robots on grid */
@@ -62,13 +66,13 @@ static void draw_battlefield(long cycle)
     if (robots[r].status != ACTIVE)
       continue;
 
-    gx = convert_to_grid(robots[r].x, MAX_X * CLICK, GRID_WIDTH);
-    gy = convert_to_grid(robots[r].y, MAX_Y * CLICK, GRID_HEIGHT);
+    gx = convert_to_grid(robots[r].x, MAX_X * CLICK, grid_width);
+    gy = convert_to_grid(robots[r].y, MAX_Y * CLICK, grid_height);
 
     if (gx >= 0 && gy >= 0) {
       /* Invert Y-axis: game Y increases upward, but grid rows increase downward */
-      gy = GRID_HEIGHT - 1 - gy;
-      grid[gy][gx] = '1' + r;  /* Robot numbers 1-4 */
+      gy = grid_height - 1 - gy;
+      grid[gy * grid_width + gx] = '1' + r;  /* Robot numbers 1-4 */
     }
   }
 
@@ -78,44 +82,47 @@ static void draw_battlefield(long cycle)
       if (missiles[r][m].stat != FLYING && missiles[r][m].stat != EXPLODING)
         continue;
 
-      gx = convert_to_grid(missiles[r][m].cur_x, MAX_X * CLICK, GRID_WIDTH);
-      gy = convert_to_grid(missiles[r][m].cur_y, MAX_Y * CLICK, GRID_HEIGHT);
+      gx = convert_to_grid(missiles[r][m].cur_x, MAX_X * CLICK, grid_width);
+      gy = convert_to_grid(missiles[r][m].cur_y, MAX_Y * CLICK, grid_height);
 
       if (gx >= 0 && gy >= 0) {
         /* Invert Y-axis: game Y increases upward, but grid rows increase downward */
-        gy = GRID_HEIGHT - 1 - gy;
+        gy = grid_height - 1 - gy;
         /* Only overwrite spaces, don't overwrite robots */
-        if (grid[gy][gx] == ' ')
-          grid[gy][gx] = '*';
+        if (grid[gy * grid_width + gx] == ' ')
+          grid[gy * grid_width + gx] = '*';
       }
     }
   }
 
   /* Print battlefield header */
   fprintf(snapshot_fp, "=== CYCLE %ld ===\n", cycle);
-  fprintf(snapshot_fp, "BATTLEFIELD (1000x1000m):\n");
+  fprintf(snapshot_fp, "BATTLEFIELD (%dx%dm):\n", g_config.battlefield_size, g_config.battlefield_size);
 
   /* Print top border */
   fprintf(snapshot_fp, "+");
-  for (j = 0; j < GRID_WIDTH; j++)
+  for (j = 0; j < grid_width; j++)
     fprintf(snapshot_fp, "-");
   fprintf(snapshot_fp, "+\n");
 
   /* Print grid rows */
-  for (i = 0; i < GRID_HEIGHT; i++) {
+  for (i = 0; i < grid_height; i++) {
     fprintf(snapshot_fp, "|");
-    for (j = 0; j < GRID_WIDTH; j++) {
-      fprintf(snapshot_fp, "%c", grid[i][j]);
+    for (j = 0; j < grid_width; j++) {
+      fprintf(snapshot_fp, "%c", grid[i * grid_width + j]);
     }
     fprintf(snapshot_fp, "|\n");
   }
 
   /* Print bottom border */
   fprintf(snapshot_fp, "+");
-  for (j = 0; j < GRID_WIDTH; j++)
+  for (j = 0; j < grid_width; j++)
     fprintf(snapshot_fp, "-");
   fprintf(snapshot_fp, "+\n");
   fprintf(snapshot_fp, "\n");
+
+  /* Free allocated memory */
+  free(grid);
 }
 
 /**
