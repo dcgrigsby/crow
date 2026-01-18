@@ -32,7 +32,7 @@ Each snapshot contains complete game state:
 Robot Programming Guide
 -----------------------
 
-### New Built-in Functions (CROW v2.1+)
+### New Built-in Functions
 
 CROW adds two new built-in functions for runtime access to battlefield configuration:
 
