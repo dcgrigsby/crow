@@ -1,5 +1,7 @@
 /* rook.r  -  scans the battlefield like a rook, i.e., only 0,90,180,270 */
 /* move horizontally only, but looks horz and vertically */
+/* NOTE: Optimized for default 1024m battlefield.
+   For other sizes, adjust center (512) and boundaries (25, 999). */
 
 int course;
 int boundary;
@@ -9,14 +11,14 @@ main()
 {
   int y;
 
-  /* move to center of board */
-  if (loc_y() < 500) {
+  /* move to center of board (512 for 1024m battlefield) */
+  if (loc_y() < 512) {
     drive(90,70);                              /* start moving */
-    while (loc_y() - 500 < 20 && speed() > 0)  /* stop near center */
+    while (loc_y() - 512 < 20 && speed() > 0)  /* stop near center */
       ;
   } else {
     drive(270,70);                             /* start moving */
-    while (loc_y() - 500 > 20 && speed() > 0)  /* stop near center */
+    while (loc_y() - 512 > 20 && speed() > 0)  /* stop near center */
       ;
   }
   drive(y,0);
@@ -24,7 +26,7 @@ main()
   /* initialize starting parameters */
   d = damage();
   course = 0;
-  boundary = 995;
+  boundary = 999;  /* ~1m from edge of 1024m field */
   drive(course,30);
 
   /* main loop */
@@ -56,6 +58,7 @@ int deg;
 {
   int range;
 
+  /* 700m cannon range for 1024m battlefield (~70% of size) */
   while ((range=scan(deg,2)) > 0 && range <= 700)  {
     drive(course,0);
     cannon(deg,range);
@@ -69,10 +72,10 @@ int deg;
 
 change() {
   if (course == 0) {
-    boundary = 5;
+    boundary = 25;   /* ~1m from edge for 1024m field */
     course = 180;
   } else {
-    boundary = 995;
+    boundary = 999;  /* ~1m from edge for 1024m field */
     course = 0;
   }
   drive(course,30);

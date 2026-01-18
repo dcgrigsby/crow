@@ -292,11 +292,20 @@
 
         Valid options and parameters are:
 
+        -bSIZE (opt)    Set battlefield size (SIZE×SIZE meters, must be
+                        power of 2, range 64-16384, default 1024).
+                        This enables configurable arena sizes for ML
+                        training and iteration.
+
         -c    (opt)     Compile only, and produce virtual machine
                         assembler code and symbol tables.
 
         -d    (opt)     Compile one program, and invoke machine level
                         single step tracing.
+
+        -gSIZE (opt)    Set snapshot grid size (SIZE×SIZE, must be power
+                        of 2, range 16-1024, default 128).
+                        Only applies when using -o for snapshot output.
 
         -mxxx (opt)     Run a series of matches, were "xxx" is the number
                         of matches.  There should be no spaces between
@@ -308,6 +317,9 @@
                         when "-m" is specified.  There should be no
                         spaces between "-l" and the number.  The default
                         cycle limit is 500,000 when -m is specified
+
+        -oFILE (opt)    Output game state snapshots to FILE. Writes ASCII
+                        battlefield and structured data each update cycle.
 
         robot-programs  (required)
                         The file name of the CROBOTS source program(s).
@@ -357,12 +369,16 @@
 
         5-1.  Battlefield
 
-        The battlefield is a 1,000 by 1,000 meter square.  A wall
+        The battlefield is a configurable square arena.  The default is
+        1,024 by 1,024 meters, but can be set to any power-of-2 value
+        between 64 and 16,384 meters using the -b option.  A wall
         surrounds the perimeter, so that a robot running into the wall
         will incur damage.
 
         The lower left corner has the coordinates x = 0, y = 0; the upper
-        right corner has the coordinated x = 999, y = 999.
+        right corner has the coordinates x = (battlefield_size - 1), y =
+        (battlefield_size - 1).  For example, with the default 1024m
+        battlefield, upper right is x = 1023, y = 1023.
 
         The compass system is oriented so that due east (right) is 0
         degrees, 90 is north, 180 is west, 270 is south.  One degree
@@ -381,11 +397,13 @@
         5-2.  Robot offense
 
         The main offensive weapons are the cannon and scanner.  The
-        cannon has a range of 700 meters.  There are an unlimited number
-        of missiles that can be fired, but a reloading factor limits the
-        number of missiles in the air at any one time to two.  The cannon
-        is mounted on an independent turret, and therefore can fire any
-        direction, 0-359, regardless of robot heading.
+        cannon has a range of 70% of the battlefield size.  For the
+        default 1024m battlefield, this is 716 meters.  There are an
+        unlimited number of missiles that can be fired, but a reloading
+        factor limits the number of missiles in the air at any one time
+        to two.  The cannon is mounted on an independent turret, and
+        therefore can fire any direction, 0-359, regardless of robot
+        heading.
 
 
 
@@ -1070,6 +1088,10 @@ main()
 
   /* initialize the corner info */
   /* x and y location of a corner, and starting scan degree */
+  /* NOTE: This example assumes 1024m default battlefield.
+     For portable code, use proportional positions:
+     Near corner: 10% * battlefield_size = ~102m
+     Far corner: 90% * battlefield_size = ~922m */
   c1x = 10;  c1y = 10;  s1 = 0;
   c2x = 10;  c2y = 990; s2 = 270;
   c3x = 990; c3y = 990; s3 = 180;
@@ -1546,8 +1568,9 @@ int xx, yy;
                 A>crobots -d yourprm.r
 
         Your robot will be placed randomly in the field, and a target
-        robot will be placed at the center of the field (x=500,y=500)
-        so your robot program can find and shoot at a target.
+        robot will be placed at the center of the field (x = battlefield_size/2,
+        y = battlefield_size/2) so your robot program can find and shoot at
+        a target.  For the default 1024m battlefield, this is x=512, y=512.
 
         The virtual machine interpreter will single step through your
         program (machine instructions, that is).  At every instruction,

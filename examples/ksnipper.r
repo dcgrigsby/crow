@@ -1,11 +1,15 @@
 
 /* snipkiller */
 /* strategy: kill snippers from the center of the for quadrants */
-
+/* NOTE: Optimized for default 1024m battlefield.
+   Corner positions (100, 900) assume battlefield >= 1000m.
+   For smaller fields, scale corners proportionally:
+   - Low corner: 10% of battlefield_size (e.g., 102 for 1024m)
+   - High corner: 90% of battlefield_size (e.g., 922 for 1024m) */
 
 main(){
   int corner, x, y, d;
-  
+
   corner=0;
   while(1){
     if(corner == 0) {x=900;y=900;} else

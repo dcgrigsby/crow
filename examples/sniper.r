@@ -2,6 +2,9 @@
 /* sniper */
 /* strategy: since a scan of the entire battlefield can be done in 90 */
 /* degrees from a corner, sniper can scan the field quickly. */
+/* NOTE: Optimized for default 1024m battlefield. */
+/*       Corner positions (10, 990) assume battlefield >= 1000m. */
+/*       For smaller fields, scale corners proportionally. */
 
 /* external variables, that can be used by any function */
 int corner;           /* current corner 0, 1, 2, or 2 */
@@ -24,6 +27,7 @@ main()
 
   /* initialize the corner info */
   /* x and y location of a corner, and starting scan degree */
+  /* Corners set for 1024m battlefield (max coords ~1023) */
   c1x = 10;  c1y = 10;  s1 = 0;
   c2x = 10;  c2y = 990; s2 = 270;
   c3x = 990; c3y = 990; s3 = 180;
@@ -37,6 +41,7 @@ main()
 
     while (dir < sc + 90) {  /* scan through 90 degree range */
       range = scan(dir,1);   /* look at a direction */
+      /* 700m cannon range for 1024m battlefield (~70% of size) */
       if (range <= 700 && range > 0) {
         while (range > 0) {    /* keep firing while in range */
           closest = range;     /* set closest flag */

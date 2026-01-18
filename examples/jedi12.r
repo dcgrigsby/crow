@@ -98,6 +98,13 @@ e poi riprende con l'algoritmo consueto. Jedi12 perde l'uso delle variabili
 bidimensionali (vettori): coreografiche e superflue.
 */
 
+/* NOTE: Optimized for default 1024m battlefield.
+   Uses hardcoded values (880, 500, 1500) that assume 1000-1024m field.
+   For other sizes, scale proportionally:
+   - 880 is ~86% of field size (used in modulo operations)
+   - 500 is ~49% of field size (center-ish)
+   - 1500 is ~150% of field size (out-of-range check) */
+
 int
 	ang,
 	oang,

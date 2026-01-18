@@ -1,6 +1,9 @@
 /* counter */
 /* scan in a counter-clockwise direction (increasing degrees) */
 /* moves when hit */
+/* NOTE: Optimized for default 1024m battlefield. */
+/*       Cannon range for 1024m is 716m; use 700 as threshold. */
+/*       For other sizes, adjust threshold to ~70% of battlefield_size. */
 
 main()
 {
@@ -14,7 +17,7 @@ main()
   angle = rand(360);
   while(1) {
     while ((range = scan(angle,res)) > 0) {
-      if (range > 700) { /* out of range, head toward it */
+      if (range > 700) { /* out of range for 1024m battlefield, head toward it */
         drive(angle,50);
         i = 1;
         while (i++ < 50) /* use a counter to limit move time */
@@ -49,6 +52,8 @@ main()
 int last_dir;
 
 /* run moves around the center of the field */
+/* NOTE: Uses hardcoded 512 for center of 1024m battlefield.
+   For other sizes, adjust: center = battlefield_size / 2 */
 
 run()
 {
@@ -59,7 +64,7 @@ run()
   y = loc_y();
 
   if (last_dir == 0) {
-    if (y > 512) {
+    if (y > 512) {  /* above center for 1024m battlefield */
       last_dir = 1;
       drive(270,100);
       while (y -100 < loc_y() && i++ < 100)
@@ -73,7 +78,7 @@ run()
       drive(90,0);
     }
   } else {
-    if (x > 512) {
+    if (x > 512) {  /* right of center for 1024m battlefield */
       last_dir = 0;
       drive(180,100);
       while (x -100 < loc_x() && i++ < 100)

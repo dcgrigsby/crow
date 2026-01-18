@@ -1,13 +1,14 @@
 /* rabbit */
 /* rabbit runs around the field, randomly */
 /* and never fires;  use as a target */
-
+/* Works with configurable battlefield sizes (64-16384m) */
 
 main()
 {
-
+  /* Use max battlefield size (16384m) as limit;
+     loc_x() and loc_y() clamp to actual battlefield */
   while(1) {
-    go(rand(1000),rand(1000));  /* go somewhere in the field */
+    go(rand(16384),rand(16384));  /* go somewhere in the field */
   }
 
 }  /* end of main */
