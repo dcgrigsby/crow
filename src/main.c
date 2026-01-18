@@ -36,6 +36,7 @@
 #include "cpu.h"
 #include "motion.h"
 #include "screen.h"
+#include "snapshot.h"
 
 s_missile missiles[MAXROBOTS][MIS_ROBOT];
 
@@ -49,6 +50,8 @@ int r_debug,			/* debug switch */
 
 FILE *f_in;			/* the compiler input source file */
 FILE *f_out;			/* the compiler diagnostic file, assumed opened */
+FILE *f_snapshot = NULL;	/* snapshot output file */
+int r_snapshot = 0;		/* snapshot mode flag */
 
 /* SIGINT handler */
 void catch_int(int);
@@ -81,6 +84,9 @@ static int usage(int rc)
 	 "            and display the realtime battlefield\n"
 	 "  -l NUM    Limit the number of machine CPU cycles per match when '-m'\n"
 	 "            is specified.  The default cycle limit is 500,000\n"
+	 "  -o FILE   Output game state snapshots to FILE. Writes ASCII battlefield\n"
+	 "            and structured data each update cycle. Works with -m for batch\n"
+	 "            recording. Headless mode when combined with -m.\n"
 	 "  -s        Show robot stats on exit\n"
 	 "  -v        Show program version and exit\n"
 	 "\n"
@@ -113,7 +119,7 @@ int main(int argc,char *argv[])
 
   setlinebuf(stdout);
 
-  while ((c = getopt(argc, argv, "cdhil:m:sv")) != EOF) {
+  while ((c = getopt(argc, argv, "cdhil:m:o:sv")) != EOF) {
       switch (c) {
         case 'c':		/* compile only flag */
           comp_only = 1;
@@ -138,6 +144,14 @@ int main(int argc,char *argv[])
 
         case 'm':		/* run multiple matches */
 	  matches = atoi(optarg);
+	  break;
+
+	case 'o':		/* snapshot output file */
+	  r_snapshot = 1;
+	  f_snapshot = fopen(optarg, "w");
+	  if (!f_snapshot) {
+	    err(1, "Failed to open snapshot file '%s'", optarg);
+	  }
 	  break;
 
         case 's':
@@ -314,6 +328,11 @@ void play(char *f[], int n)
 
   rand_pos(num_robots);
 
+  /* Initialize snapshot if requested */
+  if (r_snapshot) {
+    init_snapshot(f_snapshot);
+  }
+
   init_disp();
   update_disp();
   movement = MOTION_CYCLES;
@@ -346,6 +365,10 @@ void play(char *f[], int n)
       c += UPDATE_CYCLES;
       show_cycle(c);
       update_disp();
+
+      if (r_snapshot) {
+        output_snapshot(c);
+      }
     }
   }
 
@@ -365,9 +388,18 @@ void play(char *f[], int n)
     move_robots(1);
     move_miss(1);
     update_disp();
+
+    if (r_snapshot) {
+      c += MOTION_CYCLES;
+      output_snapshot(c);
+    }
   }
 
   end_disp();
+
+  if (r_snapshot) {
+    close_snapshot();
+  }
 
   for (i = 0; i < MAXROBOTS; i++) {
     if (robots[i].status == ACTIVE)
@@ -388,6 +420,7 @@ void match(int m, long l, char *f[], int n)
   int robotsleft;
   int m_count;
   int movement;
+  int display;
   int i, j, k;
   int wins[MAXROBOTS] = { 0 };
   int ties[MAXROBOTS] = { 0 };
@@ -405,6 +438,18 @@ void match(int m, long l, char *f[], int n)
   }
 
   for (m_count = 1; m_count <= m; m_count++) {
+    /* Initialize snapshot if requested */
+    if (r_snapshot) {
+      if (m_count > 1) {
+        fprintf(f_snapshot, "\n\n");
+        fprintf(f_snapshot, "╔════════════════════════════════════════════════════╗\n");
+        fprintf(f_snapshot, "║              MATCH %6d                         ║\n", m_count);
+        fprintf(f_snapshot, "╚════════════════════════════════════════════════════╝\n");
+        fprintf(f_snapshot, "\n");
+      }
+      init_snapshot(f_snapshot);
+    }
+
     printf("\nMatch %6d: ",m_count);
 
     for (i = 0; i < num_robots; i++) {
@@ -415,6 +460,7 @@ void match(int m, long l, char *f[], int n)
 
     rand_pos(num_robots);
     movement = MOTION_CYCLES;
+    display = UPDATE_CYCLES;  /* Snapshot display counter */
     robotsleft = num_robots;
     c = 0L;
     while (robotsleft > 1 && c < l) {
@@ -425,7 +471,7 @@ void match(int m, long l, char *f[], int n)
 	  robotsleft++;
 	  cur_robot = &robots[i];
 	  cycle();
-	} 
+	}
       }
 
       if (--movement == 0) {
@@ -438,6 +484,15 @@ void match(int m, long l, char *f[], int n)
 	  for (j = 0; j < MIS_ROBOT; j++) {
 	    if (missiles[i][j].stat == EXPLODING)
 	      count_miss(i,j);
+	  }
+	}
+
+	/* Output snapshot every UPDATE_CYCLES */
+	if (r_snapshot) {
+	  display -= MOTION_CYCLES;
+	  if (display <= 0) {
+	    display = UPDATE_CYCLES;
+	    output_snapshot(c);
 	  }
 	}
       }
@@ -456,9 +511,18 @@ void match(int m, long l, char *f[], int n)
       if (k) {
 	move_robots(0);
 	move_miss(0);
-      } 
-      else  
+
+	if (r_snapshot) {
+	  c += MOTION_CYCLES;
+	  output_snapshot(c);
+	}
+      }
+      else
 	break;
+    }
+
+    if (r_snapshot) {
+      close_snapshot();
     }
 
     printf(" cycles = %ld:\n  Survivors:\n",c);
