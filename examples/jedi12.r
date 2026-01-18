@@ -98,12 +98,7 @@ e poi riprende con l'algoritmo consueto. Jedi12 perde l'uso delle variabili
 bidimensionali (vettori): coreografiche e superflue.
 */
 
-/* NOTE: Optimized for default 1024m battlefield.
-   Uses hardcoded values (880, 500, 1500) that assume 1000-1024m field.
-   For other sizes, scale proportionally:
-   - 880 is ~86% of field size (used in modulo operations)
-   - 500 is ~49% of field size (center-ish)
-   - 1500 is ~150% of field size (out-of-range check) */
+/* Adapts to configurable battlefield sizes */
 
 int
 	ang,
@@ -121,7 +116,10 @@ int
   t,b,      /* Timer oscillazione                                   */
   i,td,tl,  /* Variabili di utilità                                 */
   deg1,     /* Limite inferiore di scansione per contare i nemici   */
-  deg2;     /* Limite superiore di scansione per contare i nemici   */
+  deg2,     /* Limite superiore di scansione per contare i nemici   */
+  modulo,   /* ~86% of field size (used in modulo operations)       */
+  center,   /* ~49% of field size (center-ish)                      */
+  maxrang;  /* ~150% of field size (out-of-range check)             */
 
 stop()
 {
@@ -275,7 +273,12 @@ int look(a)
 main() /* Inizializza alcune variabili ed innesca la routine principale */
 int abra,bula,cadabra;
 {
-  corner(posx=loc_x(posy=(loc_y(tl=td=32)>499))>499);
+  /* Initialize battlefield-adaptive variables */
+  modulo = (batsiz() * 86) / 100;
+  center = (batsiz() * 49) / 100;
+  maxrang = (batsiz() * 150) / 100;
+
+  corner(posx=loc_x(posy=(loc_y(tl=td=32)>center))>center);
   fastradar(deg2=(deg1=(90*((posy<<1)+(posx^posy))))+100);
   while (enemies<1) /* fase 1 */
   {
@@ -339,7 +342,7 @@ int abra,bula,cadabra;
     	{
   	    if ((timer>125)&&(damage()<40)) enemies=2;
   	    else {
-	        int deg, brange; deg=deg1-20; brange=1500; enemies=3;
+	        int deg, brange; deg=deg1-20; brange=maxrang; enemies=3;
 	        while((deg<=deg2)&& enemies)
     		    if (range=scan(deg+=20, 10))
     		    {
@@ -372,8 +375,8 @@ int abra,bula,cadabra;
   }
 	while(1)
   {
-		if (((posx=loc_x())%880)<120) dir=180*(posx>500);
-		else if (((posy=loc_y())%880)<120) dir=90+180*(posy>500);
+		if (((posx=loc_x())%modulo)<(modulo/7)) dir=180*(posx>center);
+		else if (((posy=loc_y())%modulo)<(modulo/7)) dir=90+180*(posy>center);
 		else if (range>600) dir=ang+25;
 		else if (range<150) dir=ang+195;
 		else dir=ang+180*(b^=1);
