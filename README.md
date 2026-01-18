@@ -43,26 +43,6 @@ Origin
 CROW adds machine learning capabilities (game state snapshots) while preserving the original game mechanics and physics engine.
 
 
-Intended audience
------------------
-
-CROBOTS will most likely appeal to programmers (especially those who
-think they can write the "best" programs), computer game enthusiasts,
-people wishing to learn the C language, and those who are interested in
-compiler design and virtual computer interpreters.
-
-
-User interface
---------------
-
-CROBOTS does not use menus, windows, pop-ups, or any other user-friendly
-interface.  Since the emphasis is on designing and writing robot control
-programs, CROBOTS is started as a compiler might be started, from the
-command line.
-
-![C robots action screenshot](doc/crobots.png)
-
-
 Snapshot Usage Guide
 --------------------
 
