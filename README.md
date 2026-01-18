@@ -62,6 +62,79 @@ Snapshot Usage Guide
 ./src/crobots -o data.txt -m 10 -l 100000 examples/counter.r examples/jedi12.r
 ```
 
+Snapshot File Format
+--------------------
+
+Output files are text-based and human-readable. Each file contains one or more matches, with snapshots recorded every 30 CPU cycles.
+
+### File Structure
+
+**File header:**
+```
+CROBOTS GAME STATE SNAPSHOT LOG
+================================
+```
+
+**Per-cycle snapshot:**
+```
+=== CYCLE 30 ===
+BATTLEFIELD (1000x1000m):
++---------+
+|    1    |
+|         |
+|    2    |
+|         |
+|    *    |
++---------+
+
+ROBOTS:
+[1] counter          | Pos: ( 502, 491) | Head: 270 | Speed: 050 | Damage:   0% | ACTIVE
+[2] jedi12           | Pos: ( 503, 512) | Head:  90 | Speed: 050 | Damage:   0% | ACTIVE
+
+MISSILES:
+[1.0] FLYING        | Pos: ( 510, 491) | Head: 270 | Range: 1000 | Dist: 0008
+
+```
+
+**Match separator:**
+```
+---
+```
+
+### Data Fields
+
+**Battlefield:**
+- 50×20 ASCII character grid representing the 1000×1000m battlefield
+- Robot positions: numbered `1`-`4` (or blank if dead)
+- Missile positions: marked with `*`
+- Origin: top-left corner is (0, 1000m), bottom-right is (1000m, 0)
+
+**Robot table fields:**
+- `[N]` - Robot index (1-4)
+- `Name` - Robot program name
+- `Pos` - Position in meters (x, y)
+- `Head` - Heading in degrees (0-359)
+- `Speed` - Speed value (0-100)
+- `Damage` - Damage percentage (0-100%)
+- `Status` - ACTIVE or DEAD
+
+**Missile table fields:**
+- `[N.M]` - Robot index and missile index
+- `Status` - FLYING or EXPLODING
+- `Pos` - Position in meters (x, y)
+- `Head` - Heading in degrees (0-359)
+- `Range` - Maximum range in meters
+- `Dist` - Current distance traveled in meters
+
+### Parsing Considerations
+
+- Lines starting with `===` mark cycle boundaries
+- Lines with `---` separate matches
+- Empty/dead robots don't appear in ROBOTS table
+- Inactive missiles don't appear in MISSILES table
+- All positions and distances use meters as units
+- Human-readable format is easily tokenizable for ML pipelines
+
 [License]:          https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
 [License Badge]:    https://img.shields.io/badge/License-GPL%20v2-blue.svg
 [GitHub]:           https://github.com/troglobit/crobots/actions/workflows/build.yml/
