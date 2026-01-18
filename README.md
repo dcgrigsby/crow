@@ -2,9 +2,38 @@ The Original C Robots Programming Game
 ======================================
 [![License Badge][]][License] [![GitHub Status][]][GitHub]
 
-CROBOTS ("see-robots") is a game based on computer programming.
+CROBOTS ("see-robots") is a game based on computer programming, now enhanced with **machine learning training data generation**.
 
 [![C Robots Demo][]][Demo]
+
+
+ML Training & World Models
+---------------------------
+
+This fork of CROBOTS adds powerful **game state snapshot export** for training Transformer-based world models. Generate deterministic, physics-accurate training data from robot battles:
+
+```bash
+# Generate 100 matches of training data (complete with physics states)
+./src/crobots -o training_data.txt -m 100 examples/counter.r examples/jedi12.r
+```
+
+Each snapshot contains:
+- **ASCII battlefield visualization** (50×20 grid) showing game state
+- **Structured robot data**: position, heading, speed, damage, status
+- **Missile dynamics**: position, heading, range, distance, lifetime
+- **Sampling rate**: Every 30 CPU cycles (~16,666 snapshots per 500k-cycle match)
+
+Perfect for:
+- Training world models on deterministic game physics
+- Studying emergent combat behavior
+- Generating synthetic training data for RL/planning algorithms
+- Analyzing game state transitions and robot decision-making
+
+**Performance**: Headless snapshot generation runs **~33x faster** than real-time display (100 matches in ~3 seconds).
+
+
+Classic CROBOTS Game
+--------------------
 
 Unlike arcade type games which require human inputs controlling some
 object, all strategy in CROBOTS must be complete before the actual game
@@ -53,37 +82,40 @@ command line.
 ![C robots action screenshot](doc/crobots.png)
 
 
-Game State Snapshots for ML Training
--------------------------------------
+Snapshot Usage Guide
+--------------------
 
-CROBOTS supports exporting game state snapshots for machine learning and data analysis. Each snapshot contains an ASCII battlefield visualization and structured data (robot positions, headings, speeds, damage, missile states, etc.).
+### Command-line Options
 
-### Basic Usage
+- `-o FILE` - Output snapshots to file (ASCII battlefield + structured data every 30 cycles)
+- `-m NUM` - Run multiple matches. Combine with `-o` for headless batch generation
+- `-l NUM` - Limit cycles per match (default: 500,000)
 
-**Headless snapshot generation (fastest):**
+### Usage Examples
+
+**Headless batch generation (fastest):**
 ```bash
 ./src/crobots -o training.txt -m 100 examples/counter.r examples/jedi12.r
 ```
 
-**Watch battle and record snapshots:**
+**Single match with snapshots:**
+```bash
+./src/crobots -o single.txt -m 1 examples/counter.r examples/jedi12.r
+```
+
+**Watch battle live + record snapshots:**
 ```bash
 ./src/crobots -o battle.txt examples/counter.r examples/jedi12.r
 ```
 
-### Options
-
-- `-o FILE` - Output snapshots to file. Creates ASCII battlefield + data tables every 30 CPU cycles
-- `-m NUM` - Run multiple matches. Combine with `-o` for headless batch generation
-- `-l NUM` - Limit cycles per match (default: 500,000)
+**Control cycle limit:**
+```bash
+./src/crobots -o data.txt -m 10 -l 100000 examples/counter.r examples/jedi12.r
+```
 
 ### Output Format
 
-Each snapshot includes:
-- ASCII battlefield (50×20 characters) showing robot positions (1-4) and missile locations (*)
-- Robot data table: position, heading, speed, damage percentage, status
-- Missile data table: position, heading, range, distance
-
-Example:
+Example snapshot:
 ```
 === CYCLE 30 ===
 BATTLEFIELD (1000x1000m):
@@ -101,26 +133,7 @@ MISSILES:
 [1.0] FLYING | Pos: ( 600, 700) | Head: 315 | Range: 0450 | Dist: 0200
 ```
 
-### For ML Training
-
-Generate large training datasets:
-```bash
-# Generate 100 matches (~330k lines each)
-./src/crobots -o training_data.txt -m 100 examples/counter.r examples/jedi12.r
-```
-
-The output is human-readable and easily tokenizable for Transformer training on world models. Data includes:
-- Complete game state at regular intervals (every 30 CPU cycles)
-- Robot kinematics: position, heading, speed
-- Combat state: damage, reload status
-- Missile dynamics: positions, trajectories, lifetime
-- Coordinate system: 1000×1000 meter battlefield
-
-### Performance
-
-- Headless mode with `-o`: ~33x faster than real-time display
-- Example: 100 matches in ~3 seconds
-- Optimized file buffering for maximum throughput
+Each snapshot contains complete game state in human-readable, easily tokenizable format.
 
 
 Origin & References
