@@ -147,13 +147,14 @@ int r_debug,			/* debug switch */
 /* of robots and missiles are measured in CLICKS * MAX_? */
 #define CLICK 10		/* 10 clicks per meter */
 
-/* Global configuration structure for runtime-configurable battlefield dimensions */
+/* Global configuration structure for runtime-configurable parameters */
 typedef struct {
     int battlefield_size;   /* CLI value (e.g., 1024) */
     int snapshot_grid_size; /* CLI value (e.g., 128) */
     int max_x;             /* battlefield_size (replaces MAX_X) */
     int max_y;             /* battlefield_size (replaces MAX_Y) */
     int mis_range;         /* 70% of battlefield_size */
+    int max_instr;         /* Maximum robot instruction limit (default 1000) */
 } config_t;
 
 extern config_t g_config;

@@ -140,7 +140,7 @@ void init_comp(void)
 
   /* allocate code space in robot, code should not be freed */
   cur_robot->code_list = NULL;
-  cur_robot->code = malloc(CODESPACE * sizeof(s_instr));
+  cur_robot->code = malloc(g_config.max_instr * sizeof(s_instr));
   instruct = cur_robot->code;
 
   /* initialize all tables */
@@ -169,10 +169,10 @@ int reset_comp(void)
   int i, j;
 
   fprintf(f_out, "  code utilization: %3d%%   (%4d / %4d)\n",
-	  (int) (((long) num_instr) * 100L / CODESPACE) ,num_instr,CODESPACE);
+	  (int) (((long) num_instr) * 100L / g_config.max_instr) ,num_instr,g_config.max_instr);
 
   /* check for too many intructions */
-  if (num_instr == CODESPACE) {
+  if (num_instr == g_config.max_instr) {
     fprintf(f_out, "  ** Error: instruction space exceeded!\n");
     r_flag = 1;
     good = 0;
@@ -440,7 +440,7 @@ void dumpoff(char *pool)
 /* efetch - emit a fetch instruction */
 int efetch(int offset)
 {
-  if (++num_instr == CODESPACE) {
+  if (++num_instr == g_config.max_instr) {
     r_flag = 1;
     if (r_debug)
       fprintf(f_out,"\n\n**efetch**\n\n");
@@ -456,7 +456,7 @@ int efetch(int offset)
 /* estore - emit a store instruction */
 int estore(int offset, int op)
 {
-  if (++num_instr == CODESPACE) {
+  if (++num_instr == g_config.max_instr) {
     r_flag = 1;
     if (r_debug)
       fprintf(f_out,"\n\n**estore*\n\n");
@@ -473,7 +473,7 @@ int estore(int offset, int op)
 /* econst - emit a constant instruction */
 int econst(long c)
 {
-  if (++num_instr == CODESPACE) {
+  if (++num_instr == g_config.max_instr) {
     r_flag = 1;
 printf("\n\n**econst*\n\n");
     return (0);
@@ -488,7 +488,7 @@ printf("\n\n**econst*\n\n");
 /* ebinop - emit a binop instruction */
 int ebinop(int c)
 {
-  if (++num_instr == CODESPACE) {
+  if (++num_instr == g_config.max_instr) {
     r_flag = 1;
     if (r_debug)
       fprintf(f_out,"\n\n**ebinop**\n\n");
@@ -504,7 +504,7 @@ int ebinop(int c)
 /* efcall - emit a fcall instruction */
 int efcall(int c)
 {
-  if (++num_instr == CODESPACE) {
+  if (++num_instr == g_config.max_instr) {
     r_flag = 1;
     if (r_debug)
       fprintf(f_out,"\n\n**efcall**\n\n");
@@ -520,7 +520,7 @@ int efcall(int c)
 /* eretsub - emit a retsub instruction */
 int eretsub(void)
 {
-  if (++num_instr == CODESPACE) {
+  if (++num_instr == g_config.max_instr) {
     r_flag = 1;
     if (r_debug)
       fprintf(f_out,"\n\n**eretsub**\n\n");
@@ -535,7 +535,7 @@ int eretsub(void)
 /* ebranch - emit a  branch instruction */
 int ebranch(void)
 {
-  if (++num_instr == CODESPACE) {
+  if (++num_instr == g_config.max_instr) {
     r_flag = 1;
     if (r_debug)
       fprintf(f_out,"\n\n**ebranch**\n\n");
@@ -551,7 +551,7 @@ int ebranch(void)
 /* echop - emit a chop instruction */
 int echop(void)
 {
-  if (++num_instr == CODESPACE) {
+  if (++num_instr == g_config.max_instr) {
     r_flag = 1;
     if (r_debug)
       fprintf(f_out,"\n\n**echop**\n\n");
@@ -566,7 +566,7 @@ int echop(void)
 /* eframe - emit a stack frame instruction */
 int eframe(void)
 {
-  if (++num_instr == CODESPACE) {
+  if (++num_instr == g_config.max_instr) {
     r_flag = 1;
     if (r_debug)
       fprintf(f_out,"\n\n**eframe**\n\n");

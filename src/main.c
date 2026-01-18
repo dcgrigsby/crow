@@ -88,6 +88,10 @@ static void init_config(void)
     g_config.max_x = g_config.battlefield_size;
     g_config.max_y = g_config.battlefield_size;
     g_config.mis_range = (g_config.battlefield_size * 70) / 100;
+
+    /* Default instruction limit if not set via CLI */
+    if (g_config.max_instr == 0)
+        g_config.max_instr = 1000;
 }
 
 static int usage(int rc)
@@ -106,6 +110,7 @@ static int usage(int rc)
 	 "            range 16-1024, default 128)\n"
 	 "  -h        This help text\n"
 	 "  -i        Interactive mode, show code output and 'Press <enter> ..'\n"
+	 "  -k SIZE   Max robot instruction limit (range 256-8000, default 1000)\n"
 	 "  -m NUM    Run a series of matches, were NUM is the number of matches.\n"
 	 "            If '-m' is not specified, the default is to run one match\n"
 	 "            and display the realtime battlefield\n"
@@ -146,7 +151,7 @@ int main(int argc,char *argv[])
 
   setlinebuf(stdout);
 
-  while ((c = getopt(argc, argv, "b:cdg:hil:m:o:sv")) != EOF) {
+  while ((c = getopt(argc, argv, "b:cdg:hik:l:m:o:sv")) != EOF) {
       switch (c) {
         case 'b':		/* battlefield size */
         {
@@ -189,6 +194,16 @@ int main(int argc,char *argv[])
 
 	case 'i':
 	  r_interactive = 1;
+	  break;
+
+	case 'k':		/* max instruction limit */
+	{
+	  int size = atoi(optarg);
+	  if (size < 256 || size > 8000) {
+	    errx(1, "Instruction limit must be in range 256-8000, got %d", size);
+	  }
+	  g_config.max_instr = size;
+	}
 	  break;
 
 	case 'l':		/* limit number of cycles in a match */
