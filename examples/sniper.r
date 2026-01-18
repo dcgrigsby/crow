@@ -2,9 +2,7 @@
 /* sniper */
 /* strategy: since a scan of the entire battlefield can be done in 90 */
 /* degrees from a corner, sniper can scan the field quickly. */
-/* NOTE: Optimized for default 1024m battlefield. */
-/*       Corner positions (10, 990) assume battlefield >= 1000m. */
-/*       For smaller fields, scale corners proportionally. */
+/* Adapts to configurable battlefield size */
 
 /* external variables, that can be used by any function */
 int corner;           /* current corner 0, 1, 2, or 2 */
@@ -15,6 +13,7 @@ int c4x, c4y;         /*   "    4 "  "  " */
 int s1, s2, s3, s4;   /* starting scan position for corner 1 - 4 */
 int sc;               /* current scan start */
 int d;                /* last damage check */
+int cannon_limit;     /* cannon range limit for current battlefield */
 
 
 
@@ -24,14 +23,15 @@ main()
   int closest;        /* check for targets in range */
   int range;          /* range to target */
   int dir;            /* scan direction */
+  int max_coord;      /* max battlefield coordinate */
 
-  /* initialize the corner info */
-  /* x and y location of a corner, and starting scan degree */
-  /* Corners set for 1024m battlefield (max coords ~1023) */
+  /* initialize the corner info based on battlefield size */
+  max_coord = battlefield_size() - 10;
   c1x = 10;  c1y = 10;  s1 = 0;
-  c2x = 10;  c2y = 990; s2 = 270;
-  c3x = 990; c3y = 990; s3 = 180;
-  c4x = 990; c4y = 10;  s4 = 90;
+  c2x = 10;  c2y = max_coord; s2 = 270;
+  c3x = max_coord; c3y = max_coord; s3 = 180;
+  c4x = max_coord; c4y = 10;  s4 = 90;
+  cannon_limit = cannon_range();
   closest = 9999;
   new_corner();       /* start at a random corner */
   d = damage();       /* get current damage */
@@ -41,8 +41,7 @@ main()
 
     while (dir < sc + 90) {  /* scan through 90 degree range */
       range = scan(dir,1);   /* look at a direction */
-      /* 700m cannon range for 1024m battlefield (~70% of size) */
-      if (range <= 700 && range > 0) {
+      if (range <= cannon_limit && range > 0) {
         while (range > 0) {    /* keep firing while in range */
           closest = range;     /* set closest flag */
           cannon(dir,range);   /* fire! */

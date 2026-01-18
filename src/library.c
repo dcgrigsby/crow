@@ -349,6 +349,22 @@ void c_sqrt(void)
   push(x);
 }
 
+
+/* c_battlefield_size - return the battlefield size in meters */
+
+void c_battlefield_size(void)
+{
+  push((long) g_config.battlefield_size);
+}
+
+
+/* c_cannon_range - return the cannon range in meters */
+
+void c_cannon_range(void)
+{
+  push((long) g_config.mis_range);
+}
+
 /**
  * Local Variables:
  *  indent-tabs-mode: nil
