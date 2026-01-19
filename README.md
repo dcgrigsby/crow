@@ -130,61 +130,26 @@ Snapshot Usage Guide
 Snapshot File Format
 --------------------
 
-Output files are text-based and human-readable. Each file contains one or more matches, with snapshots recorded at intervals configurable via `-u` (default every 30 CPU cycles). Optional ASCII battlefield visualization can be enabled with `-x 1`.
+Output files are text-based and human-readable. Each file contains one or more matches, with snapshots recorded at intervals configurable via `-u` (default every 30 CPU cycles). The crow-visualize utility can parse and display these snapshots with ASCII visualization.
 
 ### File Structure
 
 **File header:**
 ```
-CROBOTS GAME STATE SNAPSHOT LOG
-================================
+CROBOTS SNAPSHOT LOG
 ```
 
-**Per-cycle snapshot (structured interval format):**
+**Per-cycle snapshot (plain text interval format):**
 ```
-<INTERVAL cycle_start=0 cycle_end=30>
-
-<INITIAL_STATE>
-ROBOTS:
-[1] counter | pos:(512,491) | heading:270 | speed:50 | damage:0
-[2] jedi12 | pos:(513,512) | heading:90 | speed:50 | damage:0
-
-MISSILES:
-[1.0] FLYING | pos:(520,491) | heading:270 | range:1024 | dist:0
-
-</INITIAL_STATE>
-
-<ACTIONS>
-[1] DRIVE(270,50) SCAN(90,0)
-[2] CANNON(45,500)
-</ACTIONS>
-
-<EVENTS>
-</EVENTS>
-
-<FINAL_STATE>
-ROBOTS:
-[1] counter | pos:(513,491) | heading:270 | speed:50 | damage:0
-[2] jedi12 | pos:(514,512) | heading:90 | speed:50 | damage:0
-
-MISSILES:
-[1.0] FLYING | pos:(525,491) | heading:270 | range:1024 | dist:5
-
-</FINAL_STATE>
-
-</INTERVAL>
-```
-
-**Optional ASCII battlefield visualization (when `-x 1` is enabled):**
-```
-BATTLEFIELD (1024x1024m, 128x128 grid):
-+------------------------------------------+
-|            1                             |
-|                                          |
-|            2                             |
-|                                          |
-|            *                             |
-+------------------------------------------+
+INTERVAL 30 60
+ROBOT 1 counter.r 324 675 0 0 0
+ROBOT 2 counter.r 877 723 0 0 0
+ACTION 1 SCAN 115 1
+ACTION 1 SCAN 116 1
+ACTION 2 SCAN 242 1
+ACTION 2 SCAN 243 1
+ROBOT 1 counter.r 324 675 0 0 0
+ROBOT 2 counter.r 877 723 0 0 0
 ```
 
 **Match separator:**
@@ -194,51 +159,90 @@ BATTLEFIELD (1024x1024m, 128x128 grid):
 
 ### Data Fields
 
-**INITIAL_STATE / FINAL_STATE sections:**
-Capture robot and missile state at the start and end of each snapshot interval.
+**INTERVAL line:**
+```
+INTERVAL start_cycle end_cycle
+```
+- `start_cycle` - Starting CPU cycle number for this snapshot interval
+- `end_cycle` - Ending CPU cycle number for this snapshot interval
 
-**Robot fields:**
-- `[N]` - Robot index (1-4)
+**ROBOT line (one per active robot in interval):**
+```
+ROBOT id name x y heading speed damage
+```
+- `id` - Robot ID (1-4)
 - `name` - Robot program name
-- `pos:(x,y)` - Position in meters
+- `x`, `y` - Position in meters (0-1024 for default battlefield)
 - `heading` - Direction in degrees (0-359)
-- `speed` - Speed value (0-100)
+- `speed` - Robot speed value (0-100)
 - `damage` - Cumulative damage taken (0-100)
 
-**Missile fields:**
-- `[N.M]` - Robot index (N) and missile index (M)
-- Status - FLYING or EXPLODING
-- `pos:(x,y)` - Position in meters
+**MISSILE line (one per active missile in interval):**
+```
+MISSILE id.missile_num status x y heading range distance
+```
+- `id.missile_num` - Robot ID and missile index (e.g., "1.0" for robot 1, missile 0)
+- `status` - FLYING or EXPLODING
+- `x`, `y` - Current position in meters
 - `heading` - Direction in degrees (0-359)
 - `range` - Maximum range in meters
-- `dist` - Distance traveled so far in meters
+- `distance` - Distance traveled so far in meters
 
-**ACTIONS section:**
-Contains actions executed during the interval (when `-a 1` is enabled).
-- `DRIVE(heading,speed)` - Robot movement command
-- `SCAN(degree,resolution)` - Robot scanning command
-- `CANNON(degree,distance)` - Robot firing command
+**ACTION line (one per action executed, when `-a 1` is enabled):**
+```
+ACTION robot_id command param1 param2
+```
+- `robot_id` - Which robot executed the action (1-4)
+- `command` - DRIVE, SCAN, or CANNON
+- `param1`, `param2` - Command-specific parameters (heading/speed for DRIVE, angle/resolution for SCAN, etc.)
 
-**EVENTS section:**
-Tracks game events during the interval (when `-r 1` is enabled).
-- Damage events and other significant state changes
+### ASCII Battlefield Visualization Tool
 
-**ASCII Battlefield Visualization:**
-- Enabled with `-x 1` flag
-- Configurable grid size with `-g SIZE` parameter (default 128×128)
+The `crow-visualize` utility converts snapshot files to ASCII visualizations:
+
+```bash
+# Dump first match to stdout
+./src/crow-visualize data.txt
+
+# Save second match to file
+./src/crow-visualize data.txt -m 1 -o output.txt
+
+# Use custom 64×64 grid size
+./src/crow-visualize data.txt -g 64
+
+# All options work in any order
+./src/crow-visualize -o output.txt data.txt -m 2 -g 128
+```
+
+**Output format:**
+```
+CYCLE 60 | Interval 30-60
+
+[1] counter.r    dmg=0  spd=  0  hdg=  0  (324,675)
+[2] counter.r    dmg=0  spd=  0  hdg=  0  (877,723)
+
++----+
+|  1 |
+|    |
+|  2 |
+|  * |
++----+
+```
+
+**Visualization details:**
+- Configurable grid size with `-g SIZE` (must be power of 2, range 32-256)
 - Robot positions: numbered `1`-`4`
 - Missile positions: marked with `*`
 - Coordinate system: (0,0) at top-left, (battlefield_size, battlefield_size) at bottom-right
 
 ### Parsing Considerations
 
-- `<INTERVAL>` tags mark cycle boundaries with `cycle_start` and `cycle_end` attributes
 - Lines with `---` separate matches
-- Dead robots don't appear in FINAL_STATE
+- Dead robots don't appear in subsequent INTERVAL snapshots
 - Inactive missiles don't appear in state sections
-- Action and damage logging can be independently controlled via `-a` and `-r` flags
+- Action logging controlled via `-a 1|0` flag during generation
 - All positions and distances use meters as units
-- Human-readable format is easily tokenizable for ML pipelines
+- Format is easily tokenizable for ML pipelines
 
 ### Breaking Changes
 
