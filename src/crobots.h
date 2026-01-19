@@ -59,6 +59,20 @@ typedef struct func {		/* function header */
   int par_count;		/* number of parameters expected */
 } s_func;
 
+/* Action logging structures */
+typedef struct action_log {
+    int type;           /* ACTION_DRIVE, ACTION_SCAN, ACTION_CANNON */
+    int param1;         /* heading for all actions */
+    int param2;         /* speed (DRIVE), width (SCAN), range (CANNON) */
+} s_action_log;
+
+#define MAX_ACTIONS_PER_SNAPSHOT 100
+
+typedef struct robot_actions {
+    s_action_log actions[MAX_ACTIONS_PER_SNAPSHOT];
+    int count;
+} s_robot_actions;
+
 typedef struct robot {		/* robot context */
   int status;			/* status of robot, active or dead */
   char name[14];		/* name of robot */
@@ -92,6 +106,7 @@ typedef struct robot {		/* robot context */
   s_func *code_list;		/* list of function headers */
   s_instr *code;		/* machine instructions, actually instr */
   s_instr *ip; 			/* instruction pointer */
+  s_robot_actions action_buffer;	/* Action logging buffer */
 } s_robot;
 
 
@@ -156,6 +171,8 @@ typedef struct {
     int mis_range;         /* 70% of battlefield_size */
     int max_instr;         /* Maximum robot instruction limit (default 1000) */
     int snapshot_interval;  /* Cycles between snapshots (default 30) */
+    int log_actions;        /* -a flag: log actions (default 1) */
+    int log_rewards;        /* -r flag: log rewards (default 1) */
 } config_t;
 
 extern config_t g_config;
@@ -174,6 +191,25 @@ extern config_t g_config;
 #define DIRECT_RANGE 5
 #define NEAR_RANGE   20
 #define FAR_RANGE    40
+
+/* Action types for logging */
+#define ACTION_DRIVE  1
+#define ACTION_SCAN   2
+#define ACTION_CANNON 3
+
+/* Damage tracking structures */
+typedef struct damage_event {
+    int victim;         /* Robot index that took damage */
+    int attacker;       /* Robot index that dealt damage (-1 for collision/wall) */
+    int amount;         /* Damage amount in percent */
+} s_damage_event;
+
+#define MAX_DAMAGE_EVENTS 50
+
+typedef struct damage_tracker {
+    s_damage_event events[MAX_DAMAGE_EVENTS];
+    int count;
+} s_damage_tracker;
 
 /* motion functions */
 

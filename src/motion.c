@@ -25,6 +25,21 @@
 /* define long absolute value function */
 #define labs(l) ((long) l < 0L ? -l : l)
 
+/* External damage tracker */
+extern s_damage_tracker damage_tracker;
+
+void reset_damage_tracker(void) {
+    damage_tracker.count = 0;
+}
+
+static void log_damage(int victim, int attacker, int amount) {
+    if (g_config.log_rewards && damage_tracker.count < MAX_DAMAGE_EVENTS) {
+        damage_tracker.events[damage_tracker.count].victim = victim;
+        damage_tracker.events[damage_tracker.count].attacker = attacker;
+        damage_tracker.events[damage_tracker.count].amount = amount;
+        damage_tracker.count++;
+    }
+}
 
 /* sine and cosine lookup table, times 100,000 */
 /* to bypass floating point transcendentals, for speed */
@@ -253,10 +268,12 @@ void move_robots(int displ)
 	  robots[i].speed = 0;
 	  robots[i].d_speed = 0;
 	  robots[i].damage += COLLISION;
+	  log_damage(i, -1, COLLISION);  /* -1 = collision/wall */
 	  /* ...and colliding robot */
 	  robots[n].speed = 0;
 	  robots[n].d_speed = 0;
 	  robots[n].damage += COLLISION;
+	  log_damage(n, -1, COLLISION);  /* -1 = collision/wall */
 	}
       }
 
@@ -266,12 +283,14 @@ void move_robots(int displ)
 	robots[i].speed = 0;
 	robots[i].d_speed = 0;
 	robots[i].damage += COLLISION;
+	log_damage(i, -1, COLLISION);
       } else {
 	if (robots[i].x > MAX_X * CLICK) {
-	  robots[i].x = (MAX_X * CLICK) - 1; 
+	  robots[i].x = (MAX_X * CLICK) - 1;
 	  robots[i].speed = 0;
 	  robots[i].d_speed = 0;
 	  robots[i].damage += COLLISION;
+	  log_damage(i, -1, COLLISION);
 	}
       }
       if (robots[i].y < 0) {
@@ -279,12 +298,14 @@ void move_robots(int displ)
 	robots[i].speed = 0;
 	robots[i].d_speed = 0;
 	robots[i].damage += COLLISION;
+	log_damage(i, -1, COLLISION);
       } else {
 	if (robots[i].y > MAX_Y * CLICK) {
-	  robots[i].y = (MAX_Y * CLICK) - 1; 
+	  robots[i].y = (MAX_Y * CLICK) - 1;
 	  robots[i].speed = 0;
 	  robots[i].d_speed = 0;
 	  robots[i].damage += COLLISION;
+	  log_damage(i, -1, COLLISION);
 	}
       }
     }
@@ -364,6 +385,7 @@ void move_miss(int displ)
 	    for (j = 0; j < 3; j++) {
 	      if (d < exp_dam[j].dist) {
 		robots[n].damage += exp_dam[j].dam;
+		log_damage(n, r, exp_dam[j].dam);  /* r = missile owner */
 		break;
 	      }
 	    }

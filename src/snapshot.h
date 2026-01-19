@@ -38,6 +38,13 @@ void output_snapshot(long cycle);
  */
 void close_snapshot(void);
 
+/**
+ * reset_damage_tracker - Reset the damage event tracker
+ *
+ * Clears the damage tracker for the next snapshot period.
+ */
+void reset_damage_tracker(void);
+
 #endif /* SNAPSHOT_H_ */
 
 /**

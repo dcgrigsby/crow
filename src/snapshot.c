@@ -19,6 +19,10 @@
 /* Global file pointer for snapshot output */
 static FILE *snapshot_fp = NULL;
 
+/* External damage tracker and functions */
+extern s_damage_tracker damage_tracker;
+void reset_damage_tracker(void);
+
 /**
  * convert_to_grid - Convert game coordinate to grid position
  * @pos: Position in clicks * 100 (centimeter precision)
@@ -162,6 +166,113 @@ static void output_robot_table(void)
 }
 
 /**
+ * calculate_reward - Calculate per-robot reward for this tick
+ * @robot_idx: Robot index
+ * Returns: damage_dealt - damage_taken
+ */
+static int calculate_reward(int robot_idx)
+{
+    int damage_dealt = 0;
+    int damage_taken = 0;
+    int i;
+
+    for (i = 0; i < damage_tracker.count; i++) {
+        if (damage_tracker.events[i].victim == robot_idx) {
+            damage_taken += damage_tracker.events[i].amount;
+        }
+        if (damage_tracker.events[i].attacker == robot_idx) {
+            damage_dealt += damage_tracker.events[i].amount;
+        }
+    }
+
+    return damage_dealt - damage_taken;
+}
+
+/**
+ * clear_action_buffers - Clear action buffers for next snapshot
+ */
+static void clear_action_buffers(void)
+{
+    int r;
+    for (r = 0; r < MAXROBOTS; r++) {
+        robots[r].action_buffer.count = 0;
+    }
+}
+
+/**
+ * output_actions_table - Output action log table
+ */
+static void output_actions_table(void)
+{
+    int r, i;
+    const char *action_name;
+
+    if (!g_config.log_actions)
+        return;
+
+    fprintf(snapshot_fp, "ACTIONS:\n");
+
+    for (r = 0; r < MAXROBOTS; r++) {
+        if (robots[r].status != ACTIVE)
+            continue;
+
+        fprintf(snapshot_fp, "[%d] %-16s | ", r + 1, robots[r].name);
+
+        if (robots[r].action_buffer.count == 0) {
+            fprintf(snapshot_fp, "(none) | policy: scripted\n");
+            continue;
+        }
+
+        for (i = 0; i < robots[r].action_buffer.count; i++) {
+            switch (robots[r].action_buffer.actions[i].type) {
+                case ACTION_DRIVE:  action_name = "DRIVE"; break;
+                case ACTION_SCAN:   action_name = "SCAN"; break;
+                case ACTION_CANNON: action_name = "CANNON"; break;
+                default:            action_name = "UNKNOWN";
+            }
+            fprintf(snapshot_fp, "%s(%d,%d) ",
+                    action_name,
+                    robots[r].action_buffer.actions[i].param1,
+                    robots[r].action_buffer.actions[i].param2);
+        }
+        fprintf(snapshot_fp, "| policy: scripted\n");
+    }
+
+    fprintf(snapshot_fp, "\n");
+}
+
+/**
+ * output_rewards_table - Output reward and done flag table
+ */
+static void output_rewards_table(void)
+{
+    int r;
+    int reward;
+    int done;
+
+    if (!g_config.log_rewards)
+        return;
+
+    fprintf(snapshot_fp, "REWARDS:\n");
+
+    for (r = 0; r < MAXROBOTS; r++) {
+        if (robots[r].name[0] == '\0')
+            continue;  /* Skip uninitialized robots */
+
+        reward = calculate_reward(r);
+        done = (robots[r].status == DEAD) ? 1 : 0;
+
+        fprintf(snapshot_fp, "[%d] %-16s | r_t: %+4d | done: %d | policy: scripted\n",
+                r + 1,
+                robots[r].name,
+                reward,
+                done);
+    }
+
+    fprintf(snapshot_fp, "\n");
+}
+
+/**
  * output_missile_table - Output missile data table
  */
 static void output_missile_table(void)
@@ -234,6 +345,16 @@ void output_snapshot(long cycle)
 
   /* Output missile data table */
   output_missile_table();
+
+  /* Output action log table */
+  output_actions_table();
+
+  /* Output reward table */
+  output_rewards_table();
+
+  /* Clear buffers for next snapshot period */
+  clear_action_buffers();
+  reset_damage_tracker();
 }
 
 void close_snapshot(void)

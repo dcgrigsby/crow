@@ -74,6 +74,14 @@ void c_scan(void)
 
   cur_robot->scan = (int) degree;	/* record scan for display */
 
+  /* Log action */
+  if (g_config.log_actions && cur_robot->action_buffer.count < MAX_ACTIONS_PER_SNAPSHOT) {
+    int idx = cur_robot->action_buffer.count++;
+    cur_robot->action_buffer.actions[idx].type = ACTION_SCAN;
+    cur_robot->action_buffer.actions[idx].param1 = (int)degree;
+    cur_robot->action_buffer.actions[idx].param2 = (int)res;
+  }
+
   /* check other robots for +/- resolution */
   for (i = 0; i < MAXROBOTS; i++) {
     if (cur_robot == &robots[i] || robots[i].status == DEAD)
@@ -182,6 +190,15 @@ void c_cannon(void)
       missiles[r][i].rang = (int) (distance * CLICK);
       missiles[r][i].curr_dist = 0;
       missiles[r][i].count = EXP_COUNT;
+
+      /* Log action */
+      if (g_config.log_actions && cur_robot->action_buffer.count < MAX_ACTIONS_PER_SNAPSHOT) {
+        int idx = cur_robot->action_buffer.count++;
+        cur_robot->action_buffer.actions[idx].type = ACTION_CANNON;
+        cur_robot->action_buffer.actions[idx].param1 = (int)degree;
+        cur_robot->action_buffer.actions[idx].param2 = (int)distance;
+      }
+
       push(1L);
       return;
     }
@@ -218,6 +235,14 @@ void c_drive(void)
   /* update desired speed and heading */
   cur_robot->d_heading = (int) degree;
   cur_robot->d_speed = (int) speed;
+
+  /* Log action */
+  if (g_config.log_actions && cur_robot->action_buffer.count < MAX_ACTIONS_PER_SNAPSHOT) {
+    int idx = cur_robot->action_buffer.count++;
+    cur_robot->action_buffer.actions[idx].type = ACTION_DRIVE;
+    cur_robot->action_buffer.actions[idx].param1 = (int)degree;
+    cur_robot->action_buffer.actions[idx].param2 = (int)speed;
+  }
 
   push(1L);
 }

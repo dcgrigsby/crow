@@ -60,8 +60,13 @@ config_t g_config = {
     .max_x = 1024,
     .max_y = 1024,
     .mis_range = 716,
-    .snapshot_interval = 30
+    .snapshot_interval = 30,
+    .log_actions = 1,
+    .log_rewards = 1
 };
+
+/* Damage tracker for reward calculation */
+s_damage_tracker damage_tracker;
 
 /* SIGINT handler */
 void catch_int(int);
@@ -101,6 +106,7 @@ static int usage(int rc)
 	 "  crobots [options] robot1.r [robotN.r] [>file]\n"
 	 "\n"
 	 "Options:\n"
+	 "  -a 0|1    Enable/disable action logging (default 1)\n"
 	 "  -b SIZE   Battlefield size (SIZE×SIZE meters, must be power of 2,\n"
 	 "            range 64-16384, default 1024)\n"
 	 "  -c        Compile only, produce virtual machine assembler code and\n"
@@ -120,6 +126,7 @@ static int usage(int rc)
 	 "  -o FILE   Output game state snapshots to FILE. Writes ASCII battlefield\n"
 	 "            and structured data each update cycle. Works with -m for batch\n"
 	 "            recording. Headless mode when combined with -m.\n"
+	 "  -r 0|1    Enable/disable reward logging (default 1)\n"
 	 "  -u CYCLES Snapshot interval in CPU cycles (range 1-1000, default 30).\n"
 	 "            Lower values produce more snapshots, higher values produce fewer\n"
 	 "  -s        Show robot stats on exit\n"
@@ -154,8 +161,12 @@ int main(int argc,char *argv[])
 
   setlinebuf(stdout);
 
-  while ((c = getopt(argc, argv, "b:cdg:hik:l:m:o:su:v")) != EOF) {
+  while ((c = getopt(argc, argv, "a:b:cdg:hik:l:m:o:r:su:v")) != EOF) {
       switch (c) {
+        case 'a':		/* action logging */
+          g_config.log_actions = atoi(optarg);
+          break;
+
         case 'b':		/* battlefield size */
         {
           int size = atoi(optarg);
@@ -223,6 +234,10 @@ int main(int argc,char *argv[])
 	  if (!f_snapshot) {
 	    err(1, "Failed to open snapshot file '%s'", optarg);
 	  }
+	  break;
+
+	case 'r':		/* reward logging */
+	  g_config.log_rewards = atoi(optarg);
 	  break;
 
         case 's':
@@ -760,6 +775,7 @@ void init_robot(int i)
     missiles[i][j].last_xx = -1;
     missiles[i][j].last_yy = -1;
   }
+  robots[i].action_buffer.count = 0;
 }
 
 
