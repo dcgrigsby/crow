@@ -198,23 +198,33 @@ ACTION robot_id command param1 param2
 
 ### ASCII Battlefield Visualization Tool
 
-The `crow-visualize` utility converts snapshot files to ASCII visualizations:
+The `crow-visualize` utility converts snapshot files to ASCII visualizations. The snapshot filename must be the first argument, then options can follow in any order.
+
+**Modes:**
+- **Static dump mode** (with `-o FILE`): Writes ASCII frames to a file
+- **Interactive playback mode** (default): Plays frames interactively in ncurses with configurable frame delays
 
 ```bash
-# Dump first match to stdout
+# Static dump: Write first match to stdout
 ./src/crow-visualize data.txt
 
-# Save second match to file
-./src/crow-visualize data.txt -m 1 -o output.txt
+# Static dump: Save second match to file (32×32 grid)
+./src/crow-visualize data.txt -m 1 -o output.txt -g 32
 
-# Use custom 64×64 grid size
-./src/crow-visualize data.txt -g 64
+# Interactive playback: Watch match 0 with 200ms frame delay
+./src/crow-visualize data.txt -m 0 -d 200
 
-# All options work in any order
-./src/crow-visualize -o output.txt data.txt -m 2 -g 128
+# Static dump: Custom grid size
+./src/crow-visualize data.txt -g 64 -o frames.txt
 ```
 
-**Output format:**
+**Options:**
+- `-m NUM` - Match number to display (0-indexed, default 0)
+- `-o FILE` - Write static frames to file (enables dump mode instead of interactive playback)
+- `-g SIZE` - Grid size for ASCII output (must be power of 2, range 32-256, default 128)
+- `-d MSEC` - Frame delay in milliseconds for interactive playback (default 100ms, only used without `-o`)
+
+**Visualization output format:**
 ```
 CYCLE 60 | Interval 30-60
 
@@ -230,10 +240,12 @@ CYCLE 60 | Interval 30-60
 ```
 
 **Visualization details:**
-- Configurable grid size with `-g SIZE` (must be power of 2, range 32-256)
 - Robot positions: numbered `1`-`4`
 - Missile positions: marked with `*`
 - Coordinate system: (0,0) at top-left, (battlefield_size, battlefield_size) at bottom-right
+- Grid size configurable (must be power of 2, range 32-256, default 128)
+- Interactive mode displays frames sequentially with configurable delays
+- Static mode writes all frames to a text file for batch processing
 
 ### Parsing Considerations
 
