@@ -197,7 +197,7 @@ MISSILES:
 - All positions and distances use meters as units
 - Human-readable format is easily tokenizable for ML pipelines
 
-### Breaking Changes (v2.0)
+### Breaking Changes
 
 **Default battlefield size increased from 1000m to 1024m:**
 - Power-of-2 constraint for ML training consistency
