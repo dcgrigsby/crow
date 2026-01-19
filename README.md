@@ -69,8 +69,13 @@ Snapshot Usage Guide
 **Robot Compilation:**
 - `-k SIZE` - Max instruction limit per robot (range 256-8000, default 1000). Use for complex robots
 
+**Logging Control:**
+- `-a 0|1` - Enable/disable action logging (default 1). Logs robot drive, scan, and cannon actions
+- `-r 0|1` - Enable/disable reward logging (default 1). Logs damage events for reward calculation
+- `-x 0|1` - Enable/disable ASCII battlefield visualization (default 0)
+
 **Game Control:**
-- `-o FILE` - Output snapshots to file (ASCII battlefield + structured data)
+- `-o FILE` - Output snapshots to file (structured game state data + optional ASCII visualization)
 - `-u CYCLES` - Snapshot interval in CPU cycles (range 1-1000, default 30). Lower values = more snapshots
 - `-m NUM` - Run multiple matches. Combine with `-o` for headless batch generation
 - `-l NUM` - Limit cycles per match (default: 500,000)
@@ -125,7 +130,7 @@ Snapshot Usage Guide
 Snapshot File Format
 --------------------
 
-Output files are text-based and human-readable. Each file contains one or more matches, with snapshots recorded at intervals configurable via `-u` (default every 30 CPU cycles).
+Output files are text-based and human-readable. Each file contains one or more matches, with snapshots recorded at intervals configurable via `-u` (default every 30 CPU cycles). Optional ASCII battlefield visualization can be enabled with `-x 1`.
 
 ### File Structure
 
@@ -135,10 +140,44 @@ CROBOTS GAME STATE SNAPSHOT LOG
 ================================
 ```
 
-**Per-cycle snapshot:**
+**Per-cycle snapshot (structured interval format):**
 ```
-=== CYCLE 30 ===
-BATTLEFIELD (1024x1024m):
+<INTERVAL cycle_start=0 cycle_end=30>
+
+<INITIAL_STATE>
+ROBOTS:
+[1] counter | pos:(512,491) | heading:270 | speed:50 | damage:0
+[2] jedi12 | pos:(513,512) | heading:90 | speed:50 | damage:0
+
+MISSILES:
+[1.0] FLYING | pos:(520,491) | heading:270 | range:1024 | dist:0
+
+</INITIAL_STATE>
+
+<ACTIONS>
+[1] DRIVE(270,50) SCAN(90,0)
+[2] CANNON(45,500)
+</ACTIONS>
+
+<EVENTS>
+</EVENTS>
+
+<FINAL_STATE>
+ROBOTS:
+[1] counter | pos:(513,491) | heading:270 | speed:50 | damage:0
+[2] jedi12 | pos:(514,512) | heading:90 | speed:50 | damage:0
+
+MISSILES:
+[1.0] FLYING | pos:(525,491) | heading:270 | range:1024 | dist:5
+
+</FINAL_STATE>
+
+</INTERVAL>
+```
+
+**Optional ASCII battlefield visualization (when `-x 1` is enabled):**
+```
+BATTLEFIELD (1024x1024m, 128x128 grid):
 +------------------------------------------+
 |            1                             |
 |                                          |
@@ -146,14 +185,6 @@ BATTLEFIELD (1024x1024m):
 |                                          |
 |            *                             |
 +------------------------------------------+
-
-ROBOTS:
-[1] counter          | Pos: ( 512, 491) | Head: 270 | Speed: 050 | Damage:   0% | ACTIVE
-[2] jedi12           | Pos: ( 513, 512) | Head:  90 | Speed: 050 | Damage:   0% | ACTIVE
-
-MISSILES:
-[1.0] FLYING        | Pos: ( 520, 491) | Head: 270 | Range: 1024 | Dist: 0008
-
 ```
 
 **Match separator:**
@@ -163,37 +194,49 @@ MISSILES:
 
 ### Data Fields
 
-**Battlefield:**
-- Configurable ASCII grid (default 128×128) representing the battlefield
-- Grid size specified by `-g SIZE` parameter
-- Robot positions: numbered `1`-`4` (or blank if dead)
-- Missile positions: marked with `*`
-- Origin: top-left corner is (0, battlefield_size), bottom-right is (battlefield_size, 0)
-- Battlefield size in header reflects `-b SIZE` parameter (default 1024×1024m)
+**INITIAL_STATE / FINAL_STATE sections:**
+Capture robot and missile state at the start and end of each snapshot interval.
 
-**Robot table fields:**
+**Robot fields:**
 - `[N]` - Robot index (1-4)
-- `Name` - Robot program name
-- `Pos` - Position in meters (x, y)
-- `Head` - Heading in degrees (0-359)
-- `Speed` - Speed value (0-100)
-- `Damage` - Damage percentage (0-100%)
-- `Status` - ACTIVE or DEAD
+- `name` - Robot program name
+- `pos:(x,y)` - Position in meters
+- `heading` - Direction in degrees (0-359)
+- `speed` - Speed value (0-100)
+- `damage` - Cumulative damage taken (0-100)
 
-**Missile table fields:**
-- `[N.M]` - Robot index and missile index
-- `Status` - FLYING or EXPLODING
-- `Pos` - Position in meters (x, y)
-- `Head` - Heading in degrees (0-359)
-- `Range` - Maximum range in meters
-- `Dist` - Current distance traveled in meters
+**Missile fields:**
+- `[N.M]` - Robot index (N) and missile index (M)
+- Status - FLYING or EXPLODING
+- `pos:(x,y)` - Position in meters
+- `heading` - Direction in degrees (0-359)
+- `range` - Maximum range in meters
+- `dist` - Distance traveled so far in meters
+
+**ACTIONS section:**
+Contains actions executed during the interval (when `-a 1` is enabled).
+- `DRIVE(heading,speed)` - Robot movement command
+- `SCAN(degree,resolution)` - Robot scanning command
+- `CANNON(degree,distance)` - Robot firing command
+
+**EVENTS section:**
+Tracks game events during the interval (when `-r 1` is enabled).
+- Damage events and other significant state changes
+
+**ASCII Battlefield Visualization:**
+- Enabled with `-x 1` flag
+- Configurable grid size with `-g SIZE` parameter (default 128×128)
+- Robot positions: numbered `1`-`4`
+- Missile positions: marked with `*`
+- Coordinate system: (0,0) at top-left, (battlefield_size, battlefield_size) at bottom-right
 
 ### Parsing Considerations
 
-- Lines starting with `===` mark cycle boundaries
+- `<INTERVAL>` tags mark cycle boundaries with `cycle_start` and `cycle_end` attributes
 - Lines with `---` separate matches
-- Empty/dead robots don't appear in ROBOTS table
-- Inactive missiles don't appear in MISSILES table
+- Dead robots don't appear in FINAL_STATE
+- Inactive missiles don't appear in state sections
+- Action and damage logging can be independently controlled via `-a` and `-r` flags
 - All positions and distances use meters as units
 - Human-readable format is easily tokenizable for ML pipelines
 
