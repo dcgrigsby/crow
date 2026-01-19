@@ -1,4 +1,4 @@
-bin_PROGRAMS    = crobots
+bin_PROGRAMS    = crobots crow-visualize
 
 BUILT_SOURCES   = grammar.h
 AM_LFLAGS       = -B
@@ -9,3 +9,7 @@ crobots_SOURCES = main.c crobots.h compiler.c compiler.h cpu.c cpu.h display.c d
 		  snapshot.c snapshot.h
 crobots_CFLAGS  = @CURSES_CFLAGS@
 crobots_LDADD   = @CURSES_LIBS@
+
+crow_visualize_SOURCES = visualize.c
+crow_visualize_CFLAGS  =
+crow_visualize_LDADD   =
