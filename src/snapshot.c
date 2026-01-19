@@ -155,7 +155,7 @@ static void draw_battlefield(long cycle)
 /**
  * output_state_robots - Output robot state in structured format from buffer
  */
-static void output_state_robots(s_snapshot_robot_state *robot_states, long cycle)
+static void output_state_robots(s_snapshot_robot_state *robot_states)
 {
     int r;
 
@@ -392,7 +392,7 @@ void output_snapshot(long cycle)
   fprintf(snapshot_fp, "<INTERVAL cycle_start=%ld cycle_end=%ld>\n\n", prev_cycle, cycle);
 
   fprintf(snapshot_fp, "<INITIAL_STATE>\n");
-  output_state_robots(prev_robots, prev_cycle);
+  output_state_robots(prev_robots);
   output_state_missiles(prev_missiles);
   fprintf(snapshot_fp, "</INITIAL_STATE>\n\n");
 
