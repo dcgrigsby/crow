@@ -62,7 +62,8 @@ config_t g_config = {
     .mis_range = 716,
     .snapshot_interval = 30,
     .log_actions = 1,
-    .log_rewards = 1
+    .log_rewards = 1,
+    .show_ascii = 0
 };
 
 /* Damage tracker for reward calculation */
@@ -131,6 +132,7 @@ static int usage(int rc)
 	 "            Lower values produce more snapshots, higher values produce fewer\n"
 	 "  -s        Show robot stats on exit\n"
 	 "  -v        Show program version and exit\n"
+	 "  -x 0|1    Enable/disable ASCII battlefield visualization (default 0)\n"
 	 "\n"
 	 "Arguments:\n"
 	 "  robotN.r  The file name of the CROBOTS source program(s).  Up to four\n"
@@ -161,7 +163,7 @@ int main(int argc,char *argv[])
 
   setlinebuf(stdout);
 
-  while ((c = getopt(argc, argv, "a:b:cdg:hik:l:m:o:r:su:v")) != EOF) {
+  while ((c = getopt(argc, argv, "a:b:cdg:hik:l:m:o:r:su:vx:")) != EOF) {
       switch (c) {
         case 'a':		/* action logging */
           g_config.log_actions = atoi(optarg);
@@ -257,6 +259,10 @@ int main(int argc,char *argv[])
         case 'v':
 	  puts(PACKAGE_STRING);
 	  return 0;
+
+	case 'x':		/* ASCII visualization */
+	  g_config.show_ascii = atoi(optarg);
+	  break;
 
 	default:
 	  break;

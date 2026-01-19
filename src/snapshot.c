@@ -23,6 +23,29 @@ static FILE *snapshot_fp = NULL;
 extern s_damage_tracker damage_tracker;
 void reset_damage_tracker(void);
 
+/* Simplified state structures for buffering */
+typedef struct {
+    int status;
+    int x, y;
+    int heading;
+    int speed;
+    int damage;
+    char name[14];
+} s_snapshot_robot_state;
+
+typedef struct {
+    int stat;
+    int cur_x, cur_y;
+    int head;
+    int rang_remaining;
+} s_snapshot_missile_state;
+
+/* State buffers - static storage for previous state */
+static s_snapshot_robot_state prev_robots[MAXROBOTS];
+static s_snapshot_missile_state prev_missiles[MAXROBOTS * MIS_ROBOT];
+static int has_prev_state = 0;
+static long prev_cycle = 0;
+
 /**
  * convert_to_grid - Convert game coordinate to grid position
  * @pos: Position in clicks * 100 (centimeter precision)
@@ -130,39 +153,171 @@ static void draw_battlefield(long cycle)
 }
 
 /**
- * output_robot_table - Output robot data table
+ * output_state_robots - Output robot state in structured format from buffer
  */
-static void output_robot_table(void)
+static void output_state_robots(s_snapshot_robot_state *robot_states, long cycle)
 {
-  int r;
-  int x_meters, y_meters;
-  const char *status_str;
+    int r;
 
-  fprintf(snapshot_fp, "ROBOTS:\n");
+    fprintf(snapshot_fp, "CYCLE: %ld\n", cycle);
+    fprintf(snapshot_fp, "ROBOTS:\n");
 
-  for (r = 0; r < MAXROBOTS; r++) {
-    if (robots[r].status != ACTIVE)
-      continue;
+    for (r = 0; r < MAXROBOTS; r++) {
+        if (robot_states[r].status != ACTIVE)
+            continue;
 
-    /* Convert positions from clicks*100 to meters */
-    x_meters = robots[r].x / CLICK;
-    y_meters = robots[r].y / CLICK;
+        fprintf(snapshot_fp, "[%d] %-16s | x: %4d | y: %4d | heading: %03d | speed: %03d | damage: %3d\n",
+                r + 1,
+                robot_states[r].name,
+                robot_states[r].x,
+                robot_states[r].y,
+                robot_states[r].heading,
+                robot_states[r].speed,
+                robot_states[r].damage);
+    }
+}
 
-    status_str = (robots[r].damage >= 100) ? "DEAD" : "ACTIVE";
+/**
+ * output_state_missiles - Output missile state in structured format from buffer
+ */
+static void output_state_missiles(s_snapshot_missile_state *missile_states)
+{
+    int r, m;
 
-    fprintf(snapshot_fp,
-            "[%d] %-16s | Pos: (%4d,%4d) | Head: %03d | Speed: %03d | Damage: %3d%% | %s\n",
-            r + 1,
-            robots[r].name,
-            x_meters,
-            y_meters,
-            robots[r].heading,
-            robots[r].speed,
-            robots[r].damage,
-            status_str);
-  }
+    fprintf(snapshot_fp, "MISSILES:\n");
 
-  fprintf(snapshot_fp, "\n");
+    for (r = 0; r < MAXROBOTS; r++) {
+        for (m = 0; m < MIS_ROBOT; m++) {
+            int idx = r * MIS_ROBOT + m;
+            if (missile_states[idx].stat == AVAIL)
+                continue;
+
+            fprintf(snapshot_fp, "[%d.%d] %s | x: %4d | y: %4d | heading: %03d | range_remaining: %4d\n",
+                    r + 1, m,
+                    (missile_states[idx].stat == FLYING) ? "FLYING" : "EXPLODING",
+                    missile_states[idx].cur_x,
+                    missile_states[idx].cur_y,
+                    missile_states[idx].head,
+                    missile_states[idx].rang_remaining);
+        }
+    }
+}
+
+/**
+ * output_current_state_robots - Output current robot state in structured format
+ */
+static void output_current_state_robots(long cycle)
+{
+    int r;
+
+    fprintf(snapshot_fp, "CYCLE: %ld\n", cycle);
+    fprintf(snapshot_fp, "ROBOTS:\n");
+
+    for (r = 0; r < MAXROBOTS; r++) {
+        if (robots[r].status != ACTIVE)
+            continue;
+
+        fprintf(snapshot_fp, "[%d] %-16s | x: %4d | y: %4d | heading: %03d | speed: %03d | damage: %3d\n",
+                r + 1,
+                robots[r].name,
+                robots[r].x / CLICK,
+                robots[r].y / CLICK,
+                robots[r].heading,
+                robots[r].speed,
+                robots[r].damage);
+    }
+}
+
+/**
+ * output_current_state_missiles - Output current missile state in structured format
+ */
+static void output_current_state_missiles(void)
+{
+    int r, m;
+
+    fprintf(snapshot_fp, "MISSILES:\n");
+
+    for (r = 0; r < MAXROBOTS; r++) {
+        for (m = 0; m < MIS_ROBOT; m++) {
+            if (missiles[r][m].stat == AVAIL)
+                continue;
+
+            fprintf(snapshot_fp, "[%d.%d] %s | x: %4d | y: %4d | heading: %03d | range_remaining: %4d\n",
+                    r + 1, m,
+                    (missiles[r][m].stat == FLYING) ? "FLYING" : "EXPLODING",
+                    missiles[r][m].cur_x / CLICK,
+                    missiles[r][m].cur_y / CLICK,
+                    missiles[r][m].head,
+                    (missiles[r][m].rang - missiles[r][m].curr_dist) / CLICK);
+        }
+    }
+}
+
+/**
+ * output_action_list - Output actions executed in this interval
+ */
+static void output_action_list(void)
+{
+    int r, i;
+    const char *action_name;
+
+    if (!g_config.log_actions)
+        return;
+
+    for (r = 0; r < MAXROBOTS; r++) {
+        if (robots[r].status != ACTIVE)
+            continue;
+
+        fprintf(snapshot_fp, "[%d] ", r + 1);
+
+        if (robots[r].action_buffer.count == 0) {
+            fprintf(snapshot_fp, "(none)\n");
+            continue;
+        }
+
+        for (i = 0; i < robots[r].action_buffer.count; i++) {
+            switch (robots[r].action_buffer.actions[i].type) {
+                case ACTION_DRIVE:  action_name = "DRIVE"; break;
+                case ACTION_SCAN:   action_name = "SCAN"; break;
+                case ACTION_CANNON: action_name = "CANNON"; break;
+                default:            action_name = "UNKNOWN";
+            }
+            fprintf(snapshot_fp, "%s(%d,%d) ",
+                    action_name,
+                    robots[r].action_buffer.actions[i].param1,
+                    robots[r].action_buffer.actions[i].param2);
+        }
+        fprintf(snapshot_fp, "\n");
+    }
+}
+
+/**
+ * copy_current_state_to_buffer - Save current state to static buffers
+ */
+static void copy_current_state_to_buffer(void)
+{
+    int r, m;
+
+    for (r = 0; r < MAXROBOTS; r++) {
+        prev_robots[r].status = robots[r].status;
+        prev_robots[r].x = robots[r].x / CLICK;
+        prev_robots[r].y = robots[r].y / CLICK;
+        prev_robots[r].heading = robots[r].heading;
+        prev_robots[r].speed = robots[r].speed;
+        prev_robots[r].damage = robots[r].damage;
+        strncpy(prev_robots[r].name, robots[r].name, 13);
+        prev_robots[r].name[13] = '\0';
+
+        for (m = 0; m < MIS_ROBOT; m++) {
+            int idx = r * MIS_ROBOT + m;
+            prev_missiles[idx].stat = missiles[r][m].stat;
+            prev_missiles[idx].cur_x = missiles[r][m].cur_x / CLICK;
+            prev_missiles[idx].cur_y = missiles[r][m].cur_y / CLICK;
+            prev_missiles[idx].head = missiles[r][m].head;
+            prev_missiles[idx].rang_remaining =
+                (missiles[r][m].rang - missiles[r][m].curr_dist) / CLICK;
+        }
+    }
 }
 
 /**
@@ -199,126 +354,6 @@ static void clear_action_buffers(void)
     }
 }
 
-/**
- * output_actions_table - Output action log table
- */
-static void output_actions_table(void)
-{
-    int r, i;
-    const char *action_name;
-
-    if (!g_config.log_actions)
-        return;
-
-    fprintf(snapshot_fp, "ACTIONS:\n");
-
-    for (r = 0; r < MAXROBOTS; r++) {
-        if (robots[r].status != ACTIVE)
-            continue;
-
-        fprintf(snapshot_fp, "[%d] %-16s | ", r + 1, robots[r].name);
-
-        if (robots[r].action_buffer.count == 0) {
-            fprintf(snapshot_fp, "(none) | policy: scripted\n");
-            continue;
-        }
-
-        for (i = 0; i < robots[r].action_buffer.count; i++) {
-            switch (robots[r].action_buffer.actions[i].type) {
-                case ACTION_DRIVE:  action_name = "DRIVE"; break;
-                case ACTION_SCAN:   action_name = "SCAN"; break;
-                case ACTION_CANNON: action_name = "CANNON"; break;
-                default:            action_name = "UNKNOWN";
-            }
-            fprintf(snapshot_fp, "%s(%d,%d) ",
-                    action_name,
-                    robots[r].action_buffer.actions[i].param1,
-                    robots[r].action_buffer.actions[i].param2);
-        }
-        fprintf(snapshot_fp, "| policy: scripted\n");
-    }
-
-    fprintf(snapshot_fp, "\n");
-}
-
-/**
- * output_rewards_table - Output reward and done flag table
- */
-static void output_rewards_table(void)
-{
-    int r;
-    int reward;
-    int done;
-
-    if (!g_config.log_rewards)
-        return;
-
-    fprintf(snapshot_fp, "REWARDS:\n");
-
-    for (r = 0; r < MAXROBOTS; r++) {
-        if (robots[r].name[0] == '\0')
-            continue;  /* Skip uninitialized robots */
-
-        reward = calculate_reward(r);
-        done = (robots[r].status == DEAD) ? 1 : 0;
-
-        fprintf(snapshot_fp, "[%d] %-16s | r_t: %+4d | done: %d | policy: scripted\n",
-                r + 1,
-                robots[r].name,
-                reward,
-                done);
-    }
-
-    fprintf(snapshot_fp, "\n");
-}
-
-/**
- * output_missile_table - Output missile data table
- */
-static void output_missile_table(void)
-{
-  int r, m;
-  int x_meters, y_meters;
-  const char *stat_str;
-
-  fprintf(snapshot_fp, "MISSILES:\n");
-
-  for (r = 0; r < MAXROBOTS; r++) {
-    for (m = 0; m < MIS_ROBOT; m++) {
-      if (missiles[r][m].stat == AVAIL)
-        continue;
-
-      /* Convert positions and distances from clicks*100 to display units */
-      x_meters = missiles[r][m].cur_x / CLICK;
-      y_meters = missiles[r][m].cur_y / CLICK;
-
-      /* Determine status string */
-      switch (missiles[r][m].stat) {
-      case FLYING:
-        stat_str = "FLYING";
-        break;
-      case EXPLODING:
-        stat_str = "EXPLODING";
-        break;
-      default:
-        stat_str = "UNKNOWN";
-      }
-
-      fprintf(snapshot_fp,
-              "[%d.%d] %-10s | Pos: (%4d,%4d) | Head: %03d | Range: %04d | Dist: %04d\n",
-              r + 1, m,
-              stat_str,
-              x_meters,
-              y_meters,
-              missiles[r][m].head,
-              missiles[r][m].rang,
-              missiles[r][m].curr_dist / CLICK);
-    }
-  }
-
-  fprintf(snapshot_fp, "\n");
-}
-
 void init_snapshot(FILE *fp)
 {
   if (!fp)
@@ -330,6 +365,10 @@ void init_snapshot(FILE *fp)
   fprintf(snapshot_fp, "CROBOTS GAME STATE SNAPSHOT LOG\n");
   fprintf(snapshot_fp, "================================\n");
   fprintf(snapshot_fp, "\n");
+
+  /* Reset state buffering on init */
+  has_prev_state = 0;
+  prev_cycle = 0;
 }
 
 void output_snapshot(long cycle)
@@ -337,20 +376,39 @@ void output_snapshot(long cycle)
   if (!snapshot_fp)
     return;
 
-  /* Draw ASCII battlefield visualization */
-  draw_battlefield(cycle);
+  /* First snapshot: just buffer state, don't output */
+  if (!has_prev_state) {
+    copy_current_state_to_buffer();
+    prev_cycle = cycle;
+    has_prev_state = 1;
+    return;
+  }
 
-  /* Output robot data table */
-  output_robot_table();
+  /* Output STATE-ACTION-NEXT triplet */
+  fprintf(snapshot_fp, "<STATE>\n");
+  output_state_robots(prev_robots, prev_cycle);
+  output_state_missiles(prev_missiles);
+  fprintf(snapshot_fp, "</STATE>\n\n");
 
-  /* Output missile data table */
-  output_missile_table();
+  fprintf(snapshot_fp, "<ACTION>\n");
+  output_action_list();
+  fprintf(snapshot_fp, "</ACTION>\n\n");
 
-  /* Output action log table */
-  output_actions_table();
+  fprintf(snapshot_fp, "<NEXT>\n");
+  output_current_state_robots(cycle);
+  output_current_state_missiles();
+  fprintf(snapshot_fp, "</NEXT>\n\n");
 
-  /* Output reward table */
-  output_rewards_table();
+  /* Optional ASCII visualization */
+  if (g_config.show_ascii) {
+    fprintf(snapshot_fp, "DEBUG_VISUALIZATION:\n");
+    draw_battlefield(cycle);
+    fprintf(snapshot_fp, "\n");
+  }
+
+  /* Copy current state to buffer for next iteration */
+  copy_current_state_to_buffer();
+  prev_cycle = cycle;
 
   /* Clear buffers for next snapshot period */
   clear_action_buffers();

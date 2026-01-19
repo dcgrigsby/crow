@@ -173,6 +173,7 @@ typedef struct {
     int snapshot_interval;  /* Cycles between snapshots (default 30) */
     int log_actions;        /* -a flag: log actions (default 1) */
     int log_rewards;        /* -r flag: log rewards (default 1) */
+    int show_ascii;        /* -x flag: show ASCII visualization (default 0) */
 } config_t;
 
 extern config_t g_config;
