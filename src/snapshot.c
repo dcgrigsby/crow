@@ -159,14 +159,13 @@ static void output_state_robots(s_snapshot_robot_state *robot_states, long cycle
 {
     int r;
 
-    fprintf(snapshot_fp, "CYCLE: %ld\n", cycle);
     fprintf(snapshot_fp, "ROBOTS:\n");
 
     for (r = 0; r < MAXROBOTS; r++) {
         if (robot_states[r].status != ACTIVE)
             continue;
 
-        fprintf(snapshot_fp, "[%d] %-16s | x: %4d | y: %4d | heading: %03d | speed: %03d | damage: %3d\n",
+        fprintf(snapshot_fp, "[%d] %s | pos:(%d,%d) | heading:%03d | speed:%03d | damage:%d\n",
                 r + 1,
                 robot_states[r].name,
                 robot_states[r].x,
@@ -183,8 +182,7 @@ static void output_state_robots(s_snapshot_robot_state *robot_states, long cycle
 static void output_state_missiles(s_snapshot_missile_state *missile_states)
 {
     int r, m;
-
-    fprintf(snapshot_fp, "MISSILES:\n");
+    int count = 0;
 
     for (r = 0; r < MAXROBOTS; r++) {
         for (m = 0; m < MIS_ROBOT; m++) {
@@ -192,13 +190,17 @@ static void output_state_missiles(s_snapshot_missile_state *missile_states)
             if (missile_states[idx].stat == AVAIL)
                 continue;
 
-            fprintf(snapshot_fp, "[%d.%d] %s | x: %4d | y: %4d | heading: %03d | range_remaining: %4d\n",
-                    r + 1, m,
+            if (count == 0)
+                fprintf(snapshot_fp, "MISSILES:\n");
+
+            fprintf(snapshot_fp, "[%d] %s | pos:(%d,%d) | heading:%03d | range:%d\n",
+                    r + 1,
                     (missile_states[idx].stat == FLYING) ? "FLYING" : "EXPLODING",
                     missile_states[idx].cur_x,
                     missile_states[idx].cur_y,
                     missile_states[idx].head,
                     missile_states[idx].rang_remaining);
+            count++;
         }
     }
 }
@@ -206,18 +208,17 @@ static void output_state_missiles(s_snapshot_missile_state *missile_states)
 /**
  * output_current_state_robots - Output current robot state in structured format
  */
-static void output_current_state_robots(long cycle)
+static void output_current_state_robots(void)
 {
     int r;
 
-    fprintf(snapshot_fp, "CYCLE: %ld\n", cycle);
     fprintf(snapshot_fp, "ROBOTS:\n");
 
     for (r = 0; r < MAXROBOTS; r++) {
         if (robots[r].status != ACTIVE)
             continue;
 
-        fprintf(snapshot_fp, "[%d] %-16s | x: %4d | y: %4d | heading: %03d | speed: %03d | damage: %3d\n",
+        fprintf(snapshot_fp, "[%d] %s | pos:(%d,%d) | heading:%03d | speed:%03d | damage:%d\n",
                 r + 1,
                 robots[r].name,
                 robots[r].x / CLICK,
@@ -234,21 +235,24 @@ static void output_current_state_robots(long cycle)
 static void output_current_state_missiles(void)
 {
     int r, m;
-
-    fprintf(snapshot_fp, "MISSILES:\n");
+    int count = 0;
 
     for (r = 0; r < MAXROBOTS; r++) {
         for (m = 0; m < MIS_ROBOT; m++) {
             if (missiles[r][m].stat == AVAIL)
                 continue;
 
-            fprintf(snapshot_fp, "[%d.%d] %s | x: %4d | y: %4d | heading: %03d | range_remaining: %4d\n",
-                    r + 1, m,
+            if (count == 0)
+                fprintf(snapshot_fp, "MISSILES:\n");
+
+            fprintf(snapshot_fp, "[%d] %s | pos:(%d,%d) | heading:%03d | range:%d\n",
+                    r + 1,
                     (missiles[r][m].stat == FLYING) ? "FLYING" : "EXPLODING",
                     missiles[r][m].cur_x / CLICK,
                     missiles[r][m].cur_y / CLICK,
                     missiles[r][m].head,
                     (missiles[r][m].rang - missiles[r][m].curr_dist) / CLICK);
+            count++;
         }
     }
 }
@@ -384,20 +388,25 @@ void output_snapshot(long cycle)
     return;
   }
 
-  /* Output STATE-ACTION-NEXT triplet */
-  fprintf(snapshot_fp, "<STATE>\n");
+  /* Output interval with INITIAL_STATE, ACTIONS, EVENTS, FINAL_STATE */
+  fprintf(snapshot_fp, "<INTERVAL cycle_start=%ld cycle_end=%ld>\n\n", prev_cycle, cycle);
+
+  fprintf(snapshot_fp, "<INITIAL_STATE>\n");
   output_state_robots(prev_robots, prev_cycle);
   output_state_missiles(prev_missiles);
-  fprintf(snapshot_fp, "</STATE>\n\n");
+  fprintf(snapshot_fp, "</INITIAL_STATE>\n\n");
 
-  fprintf(snapshot_fp, "<ACTION>\n");
+  fprintf(snapshot_fp, "<ACTIONS>\n");
   output_action_list();
-  fprintf(snapshot_fp, "</ACTION>\n\n");
+  fprintf(snapshot_fp, "</ACTIONS>\n\n");
 
-  fprintf(snapshot_fp, "<NEXT>\n");
-  output_current_state_robots(cycle);
+  fprintf(snapshot_fp, "<EVENTS>\n");
+  fprintf(snapshot_fp, "</EVENTS>\n\n");
+
+  fprintf(snapshot_fp, "<FINAL_STATE>\n");
+  output_current_state_robots();
   output_current_state_missiles();
-  fprintf(snapshot_fp, "</NEXT>\n\n");
+  fprintf(snapshot_fp, "</FINAL_STATE>\n\n");
 
   /* Optional ASCII visualization */
   if (g_config.show_ascii) {
@@ -405,6 +414,8 @@ void output_snapshot(long cycle)
     draw_battlefield(cycle);
     fprintf(snapshot_fp, "\n");
   }
+
+  fprintf(snapshot_fp, "</INTERVAL>\n\n");
 
   /* Copy current state to buffer for next iteration */
   copy_current_state_to_buffer();
